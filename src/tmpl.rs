@@ -1,5 +1,12 @@
 use super::paths;
-use hypertext::{html_elements, maud_move, Displayed, GlobalAttributes, Renderable};
+use hypertext::{html_elements, maud_move, Attribute, Displayed, GlobalAttributes, Renderable};
+
+#[allow(non_upper_case_globals)]
+trait HtmxAttributes: GlobalAttributes {
+    const hx_boost: Attribute = Attribute;
+}
+
+impl<T: GlobalAttributes> HtmxAttributes for T {}
 
 fn layout<R: Renderable>(title: &'static str, content: R) -> impl Renderable {
     maud_move! {
@@ -10,8 +17,9 @@ fn layout<R: Renderable>(title: &'static str, content: R) -> impl Renderable {
                     (Displayed(format!("{title} - Contacts.app")))
                 }
                 link rel="stylesheet" type="text/css" href="/assets/style.css";
+                script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous" {}
             }
-            body {
+            body hx-boost="true" {
                 h1 { "CONTACTS.APP" }
                 h2 { "A Demo Contacts Application" }
                 hr;
