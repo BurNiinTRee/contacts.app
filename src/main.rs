@@ -69,6 +69,7 @@ async fn get_contacts(
                 r"SELECT id, first, last, phone, email FROM Contacts 
                     WHERE first LIKE CONCAT('%', ?1, '%')
                        OR last LIKE CONCAT('%', ?1, '%')
+                    ORDER BY first ASC
                 ",
                 q
             )
@@ -78,7 +79,7 @@ async fn get_contacts(
         None => {
             sqlx::query_as!(
                 tmpl::Contact,
-                "SELECT id, first, last, phone, email FROM Contacts"
+                "SELECT id, first, last, phone, email FROM Contacts ORDER BY first ASC"
             )
             .fetch_all(&db)
             .await?
