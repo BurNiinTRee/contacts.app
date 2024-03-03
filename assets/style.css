@@ -16,8 +16,8 @@ a {
   color: green;
 }
 
-td a {
-  margin-right: 1em;
+a ~ a {
+  margin-left: 1em;
 }
 
 table {
