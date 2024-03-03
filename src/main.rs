@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
             .typed_get(get_contacts_view)
             .typed_get(get_contacts_edit)
             .typed_post(post_contacts_edit)
-            .typed_post(post_contacts_delete)
+            .typed_delete(delete_contact)
             .nest_service("/assets", tower_http::services::ServeDir::new("assets"))
             .with_state(db),
     )
@@ -106,13 +106,11 @@ async fn post_contacts_new(
     )
     .fetch_one(&db)
     .await?;
-    Ok(Redirect::to(
-        &paths::ViewContact { id: result.id }.to_string(),
-    ))
+    Ok(Redirect::to(&paths::Contact { id: result.id }.to_string()))
 }
 
 async fn get_contacts_view(
-    paths::ViewContact { id }: paths::ViewContact,
+    paths::Contact { id }: paths::Contact,
     State(db): State<SqlitePool>,
 ) -> Result<impl IntoResponse> {
     let contact = sqlx::query_as!(
@@ -155,7 +153,7 @@ async fn post_contacts_edit(
     .fetch_one(&db)
     .await?;
     Ok(Redirect::to(
-        &paths::ViewContact {
+        &paths::Contact {
             id: result
                 .id
                 .with_context(|| format!("No Contact with id: {}", id))?,
@@ -164,8 +162,8 @@ async fn post_contacts_edit(
     ))
 }
 
-async fn post_contacts_delete(
-    paths::DeleteContact { id }: paths::DeleteContact,
+async fn delete_contact(
+    paths::Contact { id }: paths::Contact,
     State(db): State<SqlitePool>,
 ) -> Result<Redirect> {
     sqlx::query!("DELETE FROM Contacts WHERE id = ?", id)

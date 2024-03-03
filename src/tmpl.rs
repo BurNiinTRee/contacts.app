@@ -1,9 +1,21 @@
 use super::paths;
-use hypertext::{html_elements, maud_move, Attribute, Displayed, GlobalAttributes, Renderable};
+use hypertext::{html_elements, maud_move, Displayed, GlobalAttributes, Renderable};
+
+macro_rules! attributes {
+    ($($attr:ident),+ $(,)?) => {
+        $(const $attr: hypertext::Attribute = hypertext::Attribute;)+
+    };
+}
 
 #[allow(non_upper_case_globals)]
 trait HtmxAttributes: GlobalAttributes {
-    const hx_boost: Attribute = Attribute;
+    attributes! {
+        hx_boost,
+        hx_confirm,
+        hx_delete,
+        hx_push_url,
+        hx_target,
+    }
 }
 
 impl<T: GlobalAttributes> HtmxAttributes for T {}
@@ -55,7 +67,7 @@ pub fn contacts(contacts: Vec<Contact>, search_term: Option<String>) -> impl Ren
                         td { (contact.email.as_deref().unwrap_or("")) }
                         td {
                             a href=(Displayed(paths::EditContact { id: contact.id })) { "Edit" }
-                            a href=(Displayed(paths::ViewContact { id: contact.id })) { "View" }
+                            a href=(Displayed(paths::Contact { id: contact.id })) { "View" }
                         }
                     }
                 }
@@ -158,9 +170,11 @@ pub fn edit_contact(contact: Contact) -> impl Renderable {
                 button { "Save" }
             }
         }
-        form action=(Displayed(paths::DeleteContact { id: contact.id })) method="post" {
-            button { "Delete Contact" }
-        }
+        button
+            hx-delete=(Displayed(paths::Contact { id: contact.id }))
+            hx-confirm="Are you sure you want to delete this contact?"
+            hx-target="body"
+            hx-push-url="true" { "Delete Contact" }
         p {
             a href=(Displayed(paths::Contacts)) { "Back" }
         }

@@ -19,7 +19,7 @@ pub struct DeleteContact {
 
 #[derive(TypedPath, Deserialize)]
 #[typed_path("/contacts/:id")]
-pub struct ViewContact {
+pub struct Contact {
     pub id: i64,
 }
 
