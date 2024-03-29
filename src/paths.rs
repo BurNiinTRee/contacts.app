@@ -11,16 +11,22 @@ pub struct EditContact {
     pub id: i64,
 }
 
-#[derive(TypedPath, Deserialize)]
-#[typed_path("/contacts/:id/delete")]
-pub struct DeleteContact {
-    pub id: i64,
+impl EditContact {
+    pub fn new(id: &i64) -> Self {
+        Self { id: *id }
+    }
 }
 
 #[derive(TypedPath, Deserialize)]
 #[typed_path("/contacts/:id")]
 pub struct Contact {
     pub id: i64,
+}
+
+impl Contact {
+    pub fn new(id: &i64) -> Self {
+        Self { id: *id }
+    }
 }
 
 #[derive(TypedPath, Deserialize)]

@@ -39,7 +39,7 @@ thead th:nth-child(3) {
 }
 
 thead th:last-child {
-  width: 8em;
+  width: 20em;
 }
 
 td,th {

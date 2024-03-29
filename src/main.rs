@@ -1,5 +1,6 @@
 use anyhow::Context;
 use axum_extra::routing::RouterExt;
+use axum_flash::IncomingFlashes;
 
 use axum::{
     extract::{Query, State},
@@ -8,7 +9,6 @@ use axum::{
     routing::get,
     Form,
 };
-use hypertext::Renderable;
 use serde::Deserialize;
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 
@@ -85,11 +85,15 @@ async fn get_contacts(
             .await?
         }
     };
-    Ok(tmpl::contacts(contacts, query.map(|Query(SearchQuery { q })| q)).render())
+    Ok(tmpl::Contacts {
+        layout: Default::default(),
+        contacts,
+        search_term: query.map(|Query(SearchQuery { q })| q),
+    })
 }
 
 async fn get_contacts_new(_: paths::NewContact) -> impl IntoResponse {
-    tmpl::new_contact().render()
+    tmpl::NewContact::default()
 }
 
 async fn post_contacts_new(
@@ -120,11 +124,15 @@ async fn get_contacts_view(
     )
     .fetch_one(&db)
     .await?;
-    Ok(tmpl::view_contact(contact).render())
+    Ok(tmpl::ViewContact {
+        layout: Default::default(),
+        contact,
+    })
 }
 
 async fn get_contacts_edit(
     paths::EditContact { id }: paths::EditContact,
+    flashes: IncomingFlashes,
     State(db): State<SqlitePool>,
 ) -> Result<impl IntoResponse> {
     let contact = sqlx::query_as!(
@@ -134,7 +142,10 @@ async fn get_contacts_edit(
     )
     .fetch_one(&db)
     .await?;
-    Ok(tmpl::edit_contact(contact).render())
+    Ok(tmpl::EditContact {
+        layout: Default::default(),
+        contact,
+    })
 }
 
 async fn post_contacts_edit(
@@ -188,69 +199,6 @@ where
         Self(err.into())
     }
 }
-
-// #[get("/contacts/<id>")]
-// async fn contacts_view(db: &State<DatabaseConnection>, id: i32) -> ContactViewTemplate {
-//     let contact = Contact::find_by_id(id)
-//         .one(db.inner())
-//         .await
-//         .unwrap()
-//         .unwrap();
-//     ContactViewTemplate { contact }
-// }
-// #[get("/contacts/<id>/edit")]
-// async fn contacts_edit(db: &State<DatabaseConnection>, id: i32) -> ContactEditTemplate {
-//     let contact = Contact::find_by_id(id)
-//         .one(db.inner())
-//         .await
-//         .unwrap()
-//         .unwrap();
-//     let contact = EditContact {
-//         id: contact.id,
-//         first: contact.first.unwrap_or(String::new()),
-//         last: contact.last.unwrap_or(String::new()),
-//         phone: contact.phone.unwrap_or(String::new()),
-//         email: contact.email.unwrap_or(String::new()),
-//     };
-//     ContactEditTemplate { contact }
-// }
-// #[post("/contacts/<id>/edit", data = "<form>")]
-// async fn contacts_edit_post(
-//     db: &State<DatabaseConnection>,
-//     id: i32,
-//     form: Form<NewContact<'_>>,
-// ) -> Redirect {
-//     let contact = contact::ActiveModel {
-//         id: ActiveValue::set(id),
-//         first: ActiveValue::set(Some(form.first.to_owned())),
-//         last: ActiveValue::set(Some(form.last.to_owned())),
-//         phone: ActiveValue::set(Some(form.phone.to_owned())),
-//         email: ActiveValue::set(Some(form.email.to_owned())),
-//     };
-
-//     contact.update(db.inner()).await.unwrap();
-//     Redirect::to(uri!(contacts_view(id)))
-// }
-
-// #[post("/contact/<id>/delete")]
-// async fn contacts_delete(db: &State<DatabaseConnection>, id: i32) -> Redirect {
-//     Contact::delete_by_id(id).exec(db.inner()).await.unwrap();
-//     Redirect::to(uri!(contacts()))
-// }
-
-// #[post("/contacts/new", data = "<form>")]
-// async fn contacts_new_post(db: &State<DatabaseConnection>, form: Form<NewContact<'_>>) -> Redirect {
-//     let contact = contact::ActiveModel {
-//         first: ActiveValue::set(form.first.to_owned().into()),
-//         last: ActiveValue::set(form.last.to_owned().into()),
-//         phone: ActiveValue::set(form.phone.to_owned().into()),
-//         email: ActiveValue::set(form.email.to_owned().into()),
-//         ..Default::default()
-//     };
-
-//     Contact::insert(contact).exec(db.inner()).await.unwrap();
-//     Redirect::to(uri!(contacts()))
-// }
 
 #[derive(Deserialize)]
 struct NewContact {
