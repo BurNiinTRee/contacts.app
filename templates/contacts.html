@@ -22,10 +22,10 @@
   <tbody>
     {% for contact in contacts %}
       <tr>
-        <td>{{ contact.first.as_deref().unwrap_or("") }}</td>
-        <td>{{ contact.last.as_deref().unwrap_or("") }}</td>
-        <td>{{ contact.phone.as_deref().unwrap_or("") }}</td>
-        <td>{{ contact.email.as_deref().unwrap_or("") }}</td>
+        <td>{{ contact.first }}</td>
+        <td>{{ contact.last }}</td>
+        <td>{{ contact.phone }}</td>
+        <td>{{ contact.email }}</td>
         <td>
           <a href="{{ paths::EditContact::new(contact.id) }}">Edit</a>
           <a href="{{ paths::Contact::new(contact.id) }}">View</a>

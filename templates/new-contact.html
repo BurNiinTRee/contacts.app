@@ -11,21 +11,21 @@ New Contact
     <p>
       <label>
         First Name
-        <input name="first" type="text" placeholder="First Name" value="{{ contact.first.as_deref().unwrap_or_default() }}">
+        <input name="first" type="text" placeholder="First Name" value="{{ contact.first }}">
         <span class="error">{{ contact.errors.first }}</span>
       </label>
     </p>
     <p>
       <label>
         Last Name
-        <input name="last" type="text" placeholder="Last Name" value="{{ contact.last.as_deref().unwrap_or_default() }}">
+        <input name="last" type="text" placeholder="Last Name" value="{{ contact.last }}">
         <span class="error">{{ contact.errors.last }}</span>
       </label>
     </p>
     <p>
       <label>
         Phone
-        <input name="phone" type="text" placeholder="Phone" value="{{ contact.phone.as_deref().unwrap_or_default() }}">
+        <input name="phone" type="text" placeholder="Phone" value="{{ contact.phone }}">
         <span class="error">{{ contact.errors.phone }}</span>
       </label>
     </p>
@@ -38,7 +38,7 @@ New Contact
           hx-target="next span.error"
           hx-trigger="change, keyup delay:200ms changed"
           placeholder="Email"
-          value="{{ contact.email.as_deref().unwrap_or_default() }}"
+          value="{{ contact.email }}"
         >
         <span class="error">{{ contact.errors.email }}</span>
       </label>

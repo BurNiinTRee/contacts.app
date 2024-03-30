@@ -172,10 +172,10 @@ async fn post_contacts_new(
                 layout: Layout { flashes: None },
                 contact: tmpl::Contact {
                     id: 0,
-                    first: Some(contact.first),
-                    last: Some(contact.last),
-                    phone: Some(contact.phone),
-                    email: Some(contact.email),
+                    first: contact.first,
+                    last: contact.last,
+                    phone: contact.phone,
+                    email: contact.email,
                     errors: tmpl::ContactFieldErrors {
                         email: String::from("Email already exists"),
                         ..Default::default()
@@ -286,10 +286,10 @@ async fn post_contacts_edit(
                 layout: Layout { flashes: None },
                 contact: tmpl::Contact {
                     id,
-                    first: Some(contact.first),
-                    last: Some(contact.last),
-                    phone: Some(contact.phone),
-                    email: Some(contact.email),
+                    first: contact.first,
+                    last: contact.last,
+                    phone: contact.phone,
+                    email: contact.email,
                     errors: tmpl::ContactFieldErrors {
                         email: String::from("Email already exists"),
                         ..Default::default()

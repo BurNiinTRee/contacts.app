@@ -46,10 +46,10 @@ pub struct EditContact {
 #[derive(Default, Clone)]
 pub struct Contact {
     pub id: i64,
-    pub first: Option<String>,
-    pub last: Option<String>,
-    pub phone: Option<String>,
-    pub email: Option<String>,
+    pub first: String,
+    pub last: String,
+    pub phone: String,
+    pub email: String,
     pub errors: ContactFieldErrors,
 }
 
