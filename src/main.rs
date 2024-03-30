@@ -7,7 +7,8 @@ use axum::{
 use axum_extra::routing::RouterExt;
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 
-type Result<T, E = ServerError> = std::result::Result<T, E>;
+mod model;
+mod pages;
 
 #[derive(Clone, FromRef)]
 struct AppState {
@@ -15,9 +16,6 @@ struct AppState {
     contacts: model::Contacts,
     flash_config: axum_flash::Config,
 }
-
-mod model;
-mod pages;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -63,6 +61,8 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+type Result<T, E = ServerError> = std::result::Result<T, E>;
 
 struct ServerError(anyhow::Error);
 
