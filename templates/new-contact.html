@@ -4,50 +4,10 @@ New Contact
 {% endblock title %}
 
 {% block content %}
-<form action="{{ paths::NewContact }}" method="post">
-  {% block contact_fields %}
-  <fieldset>
-    <legend>Contact Values</legend>
-    <p>
-      <label>
-        First Name
-        <input name="first" type="text" placeholder="First Name" value="{{ contact.first }}">
-        <span class="error">{{ contact.errors.first }}</span>
-      </label>
-    </p>
-    <p>
-      <label>
-        Last Name
-        <input name="last" type="text" placeholder="Last Name" value="{{ contact.last }}">
-        <span class="error">{{ contact.errors.last }}</span>
-      </label>
-    </p>
-    <p>
-      <label>
-        Phone
-        <input name="phone" type="text" placeholder="Phone" value="{{ contact.phone }}">
-        <span class="error">{{ contact.errors.phone }}</span>
-      </label>
-    </p>
-    <p>
-      <label>
-        Email
-        <input 
-          name="email" type="email" 
-          hx-get="{{ paths::ContactEmail::new(contact.id) }}"
-          hx-target="next span.error"
-          hx-trigger="change, keyup delay:200ms changed"
-          placeholder="Email"
-          value="{{ contact.email }}"
-        >
-        <span class="error">{{ contact.errors.email }}</span>
-      </label>
-    </p>
-    <button>Save</button>
-  </fieldset>
-  {% endblock contact_fields %}
+<form action="{{ super::Path }}" method="post">
+  {{ super::shared::ContactFields::new(contact)|safe }}
 </form>
 <p>
-  <a href="{{ paths::Contacts }}">Back</a>
+  <a href="{{ super::Path }}">Back</a>
 </p>
 {% endblock content %}

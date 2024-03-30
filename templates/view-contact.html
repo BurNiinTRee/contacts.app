@@ -14,7 +14,7 @@ Contact Details
   </div>
 </div>
 <p>
-  <a href="{{ paths::EditContact::new(contact.id) }}">Edit</a>
-  <a href="{{ paths::Contacts }}">Back</a>
+  <a href="{{ edit::Path::new(contact.id) }}">Edit</a>
+  <a href="{{ super::Path }}">Back</a>
 </p>
 {% endblock content %}

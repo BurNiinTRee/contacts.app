@@ -2,7 +2,7 @@
 {% block title %}Contacts{% endblock title %}
 
 {% block content %}
-<form class="tool-bar" action="{{ paths::Contacts }}" method="get">
+<form class="tool-bar" action="{{ Path }}" method="get">
   <label>
     Search Term
     <input id="search" type="search" name="q" value="{{ search_term.as_deref().unwrap_or("") }}">
@@ -27,8 +27,8 @@
         <td>{{ contact.phone }}</td>
         <td>{{ contact.email }}</td>
         <td>
-          <a href="{{ paths::EditContact::new(contact.id) }}">Edit</a>
-          <a href="{{ paths::Contact::new(contact.id) }}">View</a>
+          <a href="{{ item::edit::Path::new(contact.id) }}">Edit</a>
+          <a href="{{ item::Path::new(contact.id) }}">View</a>
         </td>
       </tr>
     {% endfor %}
@@ -36,14 +36,14 @@
 <div>
   <span style="float: right">
   {% if page > 1 %}
-    <a href="{{ paths::Contacts.with_params(search_term, Some(page - 1)) }}">Previous</a>
+    <a href="{{ Path.with_params(search_term, Some(page - 1)) }}">Previous</a>
   {% endif %}
   {% if contacts.len() == 10 %}
-    <a href="{{ paths::Contacts.with_params(search_term, Some(page + 1)) }}">Next</a>
+    <a href="{{ Path.with_params(search_term, Some(page + 1)) }}">Next</a>
   {% endif %}
   </span>
 </div>
 <p>
-  <a href="{{ paths::NewContact }}">Add Contact</a>
+  <a href="{{ new::Path }}">Add Contact</a>
 </p>
 {% endblock content %}
