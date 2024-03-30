@@ -9,7 +9,7 @@ use axum::{
     routing::get,
     Form,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 use tmpl::Layout;
 
@@ -63,26 +63,32 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[derive(Deserialize)]
-struct SearchQuery {
-    q: String,
+#[derive(Deserialize, Serialize)]
+struct ContactsQuery {
+    q: Option<String>,
+    page: Option<i64>,
 }
 
 async fn get_contacts(
     _: paths::Contacts,
     flashes: IncomingFlashes,
     State(db): State<SqlitePool>,
-    query: Option<Query<SearchQuery>>,
+    Query(query): Query<ContactsQuery>,
 ) -> Result<impl IntoResponse> {
-    let contacts = match query {
-        Some(Query(SearchQuery { ref q })) => {
+    let page = query.page.unwrap_or(1);
+    let pagesize = 10;
+    let offset = (page - 1) * pagesize;
+    let contacts = match query.q {
+        Some(ref q) => {
             let result = sqlx::query!(
                 r"SELECT id, first, last, phone, email FROM Contacts 
                     WHERE first LIKE CONCAT('%', ?1, '%')
                        OR last LIKE CONCAT('%', ?1, '%')
-                    ORDER BY first ASC
+                    ORDER BY first ASC LIMIT ?2 OFFSET ?3
                 ",
-                q
+                q,
+                pagesize,
+                offset
             )
             .fetch_all(&db)
             .await?;
@@ -100,7 +106,7 @@ async fn get_contacts(
         }
         None => {
             let result = sqlx::query!(
-                "SELECT id, first, last, phone, email FROM Contacts ORDER BY first ASC"
+                "SELECT id, first, last, phone, email FROM Contacts ORDER BY first ASC LIMIT 10 OFFSET ?", offset
             )
             .fetch_all(&db)
             .await?;
@@ -124,7 +130,8 @@ async fn get_contacts(
                 flashes: Some(flashes),
             },
             contacts,
-            search_term: query.map(|Query(SearchQuery { q })| q),
+            page,
+            search_term: query.q,
         },
     ))
 }

@@ -19,6 +19,7 @@ impl Layout {
 pub struct Contacts {
     pub layout: Layout,
     pub search_term: Option<String>,
+    pub page: i64,
     pub contacts: Vec<Contact>,
 }
 

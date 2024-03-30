@@ -33,6 +33,16 @@
       </tr>
     {% endfor %}
 </table>
+<div>
+  <span style="float: right">
+  {% if page > 1 %}
+    <a href="{{ paths::Contacts.with_params(search_term, Some(page - 1)) }}">Previous</a>
+  {% endif %}
+  {% if contacts.len() == 10 %}
+    <a href="{{ paths::Contacts.with_params(search_term, Some(page + 1)) }}">Next</a>
+  {% endif %}
+  </span>
+</div>
 <p>
   <a href="{{ paths::NewContact }}">Add Contact</a>
 </p>

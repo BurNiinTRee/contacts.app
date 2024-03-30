@@ -1,9 +1,22 @@
-use axum_extra::routing::TypedPath;
+use axum_extra::routing::{TypedPath, WithQueryParams};
 use serde::Deserialize;
 
 #[derive(TypedPath)]
 #[typed_path("/contacts")]
 pub struct Contacts;
+
+impl Contacts {
+    pub fn with_params(
+        self,
+        q: &Option<String>,
+        page: Option<&i64>,
+    ) -> WithQueryParams<Self, super::ContactsQuery> {
+        self.with_query_params(super::ContactsQuery {
+            q: q.clone(),
+            page: page.copied(),
+        })
+    }
+}
 
 #[derive(TypedPath, Deserialize)]
 #[typed_path("/contacts/:id/edit")]
