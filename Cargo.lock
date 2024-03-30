@@ -339,6 +339,7 @@ dependencies = [
  "axum-flash",
  "serde",
  "sqlx",
+ "thiserror",
  "tokio",
  "tower-http",
 ]

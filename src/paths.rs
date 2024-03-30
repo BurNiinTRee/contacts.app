@@ -9,7 +9,7 @@ impl Contacts {
     pub fn with_params(
         self,
         q: &Option<String>,
-        page: Option<&i64>,
+        page: Option<&u64>,
     ) -> WithQueryParams<Self, super::ContactsQuery> {
         self.with_query_params(super::ContactsQuery {
             q: q.clone(),
