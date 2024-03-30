@@ -32,3 +32,15 @@ impl Contact {
 #[derive(TypedPath, Deserialize)]
 #[typed_path("/contacts/new")]
 pub struct NewContact;
+
+#[derive(TypedPath, Deserialize)]
+#[typed_path("/contacts/:id/email")]
+pub struct ContactEmail {
+    pub id: i64,
+}
+
+impl ContactEmail {
+    pub fn new(id: &i64) -> Self {
+        Self { id: *id }
+    }
+}

@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block title %}
+Edit Contact
+{% endblock title %}
+
+{% block content %}
+<form action="{{ paths::EditContact::new(contact.id) }}" method="post">
+  {{ ContactFields::new(contact)|safe }}
+</form>
+<button
+  hx-delete="{{ paths::Contact::new(contact.id) }}"
+  hx-confirm="Are you sure you want to delete this contact?"
+  hx-target="body"
+  hx-push-url="true"
+>
+  Delete Contact
+</button>
+<p>
+  <a href="{{ paths::Contacts }}">Back</a>
+</p>
+{% endblock content %}

@@ -1,9 +1,9 @@
 use anyhow::Context;
 use axum_extra::routing::RouterExt;
-use axum_flash::IncomingFlashes;
+use axum_flash::{Flash, IncomingFlashes};
 
 use axum::{
-    extract::{Query, State},
+    extract::{FromRef, Query, State},
     http::StatusCode,
     response::{IntoResponse, Redirect, Response},
     routing::get,
@@ -11,11 +11,18 @@ use axum::{
 };
 use serde::Deserialize;
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
+use tmpl::Layout;
 
 mod paths;
 mod tmpl;
 
 type Result<T, E = ServerError> = std::result::Result<T, E>;
+
+#[derive(Clone, FromRef)]
+struct AppState {
+    db: SqlitePool,
+    flash_config: axum_flash::Config,
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -43,9 +50,13 @@ async fn main() -> anyhow::Result<()> {
             .typed_get(get_contacts_view)
             .typed_get(get_contacts_edit)
             .typed_post(post_contacts_edit)
+            .typed_get(get_contact_email)
             .typed_delete(delete_contact)
             .nest_service("/assets", tower_http::services::ServeDir::new("assets"))
-            .with_state(db),
+            .with_state(AppState {
+                db,
+                flash_config: axum_flash::Config::new(axum_flash::Key::generate()),
+            }),
     )
     .await?;
 
@@ -59,13 +70,13 @@ struct SearchQuery {
 
 async fn get_contacts(
     _: paths::Contacts,
+    flashes: IncomingFlashes,
     State(db): State<SqlitePool>,
     query: Option<Query<SearchQuery>>,
 ) -> Result<impl IntoResponse> {
     let contacts = match query {
         Some(Query(SearchQuery { ref q })) => {
-            sqlx::query_as!(
-                tmpl::Contact,
+            let result = sqlx::query!(
                 r"SELECT id, first, last, phone, email FROM Contacts 
                     WHERE first LIKE CONCAT('%', ?1, '%')
                        OR last LIKE CONCAT('%', ?1, '%')
@@ -74,33 +85,65 @@ async fn get_contacts(
                 q
             )
             .fetch_all(&db)
-            .await?
+            .await?;
+            result
+                .into_iter()
+                .map(|res| tmpl::Contact {
+                    id: res.id,
+                    first: res.first,
+                    last: res.last,
+                    phone: res.phone,
+                    email: res.email,
+                    errors: tmpl::ContactFieldErrors::default(),
+                })
+                .collect()
         }
         None => {
-            sqlx::query_as!(
-                tmpl::Contact,
+            let result = sqlx::query!(
                 "SELECT id, first, last, phone, email FROM Contacts ORDER BY first ASC"
             )
             .fetch_all(&db)
-            .await?
+            .await?;
+            result
+                .into_iter()
+                .map(|res| tmpl::Contact {
+                    id: res.id,
+                    first: res.first,
+                    last: res.last,
+                    phone: res.phone,
+                    email: res.email,
+                    errors: tmpl::ContactFieldErrors::default(),
+                })
+                .collect()
         }
     };
-    Ok(tmpl::Contacts {
-        layout: Default::default(),
-        contacts,
-        search_term: query.map(|Query(SearchQuery { q })| q),
-    })
+    Ok((
+        flashes.clone(),
+        tmpl::Contacts {
+            layout: Layout {
+                flashes: Some(flashes),
+            },
+            contacts,
+            search_term: query.map(|Query(SearchQuery { q })| q),
+        },
+    ))
 }
 
-async fn get_contacts_new(_: paths::NewContact) -> impl IntoResponse {
-    tmpl::NewContact::default()
+async fn get_contacts_new(_: paths::NewContact, flashes: IncomingFlashes) -> impl IntoResponse {
+    tmpl::NewContact {
+        layout: Layout {
+            flashes: Some(flashes),
+        },
+        contact: tmpl::Contact::default(),
+    }
 }
 
 async fn post_contacts_new(
     _: paths::NewContact,
     State(db): State<SqlitePool>,
+    flash: Flash,
     Form(contact): Form<NewContact>,
-) -> Result<Redirect> {
+) -> Result<Response> {
     let result = sqlx::query!(
         "INSERT INTO Contacts (first, last, phone, email) VALUES (?, ?, ?, ?) RETURNING id",
         contact.first,
@@ -109,25 +152,66 @@ async fn post_contacts_new(
         contact.email,
     )
     .fetch_one(&db)
-    .await?;
-    Ok(Redirect::to(&paths::Contact { id: result.id }.to_string()))
+    .await;
+    match result {
+        Ok(result) => Ok((
+            flash.success("Contact created"),
+            Redirect::to(&paths::Contact { id: result.id }.to_string()),
+        )
+            .into_response()),
+        Err(sqlx::Error::Database(db_err)) if db_err.is_unique_violation() => Ok((
+            flash.error("Contact could not be saved"),
+            tmpl::NewContact {
+                layout: Layout { flashes: None },
+                contact: tmpl::Contact {
+                    id: 0,
+                    first: Some(contact.first),
+                    last: Some(contact.last),
+                    phone: Some(contact.phone),
+                    email: Some(contact.email),
+                    errors: tmpl::ContactFieldErrors {
+                        email: String::from("Email already exists"),
+                        ..Default::default()
+                    },
+                },
+            },
+        )
+            .into_response()),
+        Err(err) => {
+            eprintln!("{}", err);
+            Err(err)?
+        }
+    }
 }
 
 async fn get_contacts_view(
     paths::Contact { id }: paths::Contact,
+    flashes: IncomingFlashes,
     State(db): State<SqlitePool>,
 ) -> Result<impl IntoResponse> {
-    let contact = sqlx::query_as!(
-        tmpl::Contact,
+    let contact = sqlx::query!(
         "SELECT id, first, last, phone, email FROM Contacts WHERE id = ?",
         id,
     )
     .fetch_one(&db)
     .await?;
-    Ok(tmpl::ViewContact {
-        layout: Default::default(),
-        contact,
-    })
+    let contact = tmpl::Contact {
+        id,
+        first: contact.first,
+        last: contact.last,
+        phone: contact.phone,
+        email: contact.email,
+        errors: Default::default(),
+    };
+    Ok((
+        flashes.clone(),
+        tmpl::ViewContact {
+            layout: Layout {
+                flashes: Some(flashes),
+            },
+            contact,
+        },
+    ))
 }
 
 async fn get_contacts_edit(
@@ -135,24 +219,37 @@ async fn get_contacts_edit(
     flashes: IncomingFlashes,
     State(db): State<SqlitePool>,
 ) -> Result<impl IntoResponse> {
-    let contact = sqlx::query_as!(
-        tmpl::Contact,
+    let contact = sqlx::query!(
         "SELECT id, first, last, phone, email FROM Contacts WHERE id = ?",
         id,
     )
     .fetch_one(&db)
     .await?;
-    Ok(tmpl::EditContact {
-        layout: Default::default(),
-        contact,
-    })
+    let contact = tmpl::Contact {
+        id,
+        first: contact.first,
+        last: contact.last,
+        phone: contact.phone,
+        email: contact.email,
+        errors: Default::default(),
+    };
+    Ok((
+        flashes.clone(),
+        tmpl::EditContact {
+            layout: Layout {
+                flashes: Some(flashes),
+            },
+            contact,
+        },
+    ))
 }
 
 async fn post_contacts_edit(
     paths::EditContact { id }: paths::EditContact,
     State(db): State<SqlitePool>,
+    flash: Flash,
     Form(contact): Form<NewContact>,
-) -> Result<Redirect> {
+) -> Result<Response> {
     let result = sqlx::query!(
         "UPDATE Contacts SET first = ?, last = ?, phone = ?, email = ? WHERE id = ? RETURNING id",
         contact.first,
@@ -162,25 +259,76 @@ async fn post_contacts_edit(
         id
     )
     .fetch_one(&db)
-    .await?;
-    Ok(Redirect::to(
-        &paths::Contact {
-            id: result
-                .id
-                .with_context(|| format!("No Contact with id: {}", id))?,
+    .await;
+    match result {
+        Ok(result) => Ok((
+            flash.success("Contact updated"),
+            Redirect::to(
+                &paths::Contact {
+                    id: result
+                        .id
+                        .with_context(|| format!("No Contact with id: {}", id))?,
+                }
+                .to_string(),
+            ),
+        )
+            .into_response()),
+        Err(sqlx::Error::Database(db_err)) if db_err.is_unique_violation() => Ok((
+            flash.error("Contact could not be saved"),
+            tmpl::EditContact {
+                layout: Layout { flashes: None },
+                contact: tmpl::Contact {
+                    id,
+                    first: Some(contact.first),
+                    last: Some(contact.last),
+                    phone: Some(contact.phone),
+                    email: Some(contact.email),
+                    errors: tmpl::ContactFieldErrors {
+                        email: String::from("Email already exists"),
+                        ..Default::default()
+                    },
+                },
+            },
+        )
+            .into_response()),
+        Err(err) => {
+            eprintln!("{}", err);
+            Err(err)?
         }
-        .to_string(),
-    ))
+    }
+}
+
+#[derive(Deserialize)]
+struct ContactEmailQuery {
+    email: String,
+}
+
+async fn get_contact_email(
+    paths::ContactEmail { id }: paths::ContactEmail,
+    Query(ContactEmailQuery { email }): Query<ContactEmailQuery>,
+    State(db): State<SqlitePool>,
+) -> Result<impl IntoResponse> {
+    let result = sqlx::query!("SELECT id FROM Contacts WHERE email = ?", email)
+        .fetch_optional(&db)
+        .await?;
+    match result {
+        Some(res) if res.id != Some(id) => Ok("Email already exists"),
+        _ => Ok(""),
+    }
 }
 
 async fn delete_contact(
     paths::Contact { id }: paths::Contact,
+    flash: Flash,
     State(db): State<SqlitePool>,
-) -> Result<Redirect> {
+) -> Result<(Flash, Redirect)> {
     sqlx::query!("DELETE FROM Contacts WHERE id = ?", id)
         .execute(&db)
         .await?;
-    Ok(Redirect::to(&paths::Contacts.to_string()))
+    Ok((
+        flash.success("Contact deleted"),
+        Redirect::to(&paths::Contacts.to_string()),
+    ))
 }
 
 struct ServerError(anyhow::Error);

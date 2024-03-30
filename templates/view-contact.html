@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block title %}
+Contact Details
+{% endblock title %}
+
+{% block content %}
+<h1>{{ contact.first.as_deref().unwrap_or("") }} {{ contact.last.as_deref().unwrap_or("") }}</h1>
+<div>
+  <div>
+    Phone: {{ contact.phone.as_deref().unwrap_or("") }}
+  </div>
+  <div>
+    Email: {{ contact.email.as_deref().unwrap_or("") }}
+  </div>
+</div>
+<p>
+  <a href="{{ paths::EditContact::new(contact.id) }}">Edit</a>
+  <a href="{{ paths::Contacts }}">Back</a>
+</p>
+{% endblock content %}

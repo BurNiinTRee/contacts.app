@@ -1,9 +1,17 @@
 use super::paths;
 use askama::Template;
 
-#[derive(Default)]
 pub struct Layout {
-    flashes: Vec<(axum_flash::Level, String)>,
+    pub flashes: Option<axum_flash::IncomingFlashes>,
+}
+
+impl Layout {
+    pub fn flashes<'a>(&'a self) -> Box<dyn Iterator<Item = (axum_flash::Level, &str)> + 'a> {
+        match &self.flashes {
+            Some(flashes) => Box::new(flashes.into_iter()),
+            None => Box::new(None.into_iter()),
+        }
+    }
 }
 
 #[derive(Template)]
@@ -14,11 +22,11 @@ pub struct Contacts {
     pub contacts: Vec<Contact>,
 }
 
-#[derive(Default, Template)]
+#[derive(Template)]
 #[template(path = "new-contact.html")]
 pub struct NewContact {
     pub layout: Layout,
-    contact: Contact,
+    pub contact: Contact,
 }
 
 #[derive(Template)]
@@ -41,12 +49,13 @@ pub struct Contact {
     pub last: Option<String>,
     pub phone: Option<String>,
     pub email: Option<String>,
+    pub errors: ContactFieldErrors,
 }
 
 #[derive(Template)]
 #[template(path = "new-contact.html", block = "contact_fields")]
 pub struct ContactFields {
-    contact: Contact,
+    pub contact: Contact,
 }
 
 impl ContactFields {
@@ -55,4 +64,12 @@ impl ContactFields {
             contact: contact.clone(),
         }
     }
+}
+
+#[derive(Clone, Default)]
+pub struct ContactFieldErrors {
+    pub first: String,
+    pub last: String,
+    pub phone: String,
+    pub email: String,
 }

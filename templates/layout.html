@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}{% endblock title %} - Contacts.app</title>
+    <link rel="stylesheet" type="text/css" href="/assets/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+  </head>
+  <body hx-boost="true">
+    <h1>CONTACTS.APP</h1>
+    <h2>A Demo Contacts Application</h2>
+    <div class="flashes">
+      {% for flash in layout.flashes() %}
+        <p _="on load wait 2s then remove me">
+          {{ flash.1 }}
+        </p>
+      {% endfor %}
+    </div>
+    <hr>
+    {% block content %}
+    {% endblock content %}
+  </body>
+</html>

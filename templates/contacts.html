@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block title %}Contacts{% endblock title %}
+
+{% block content %}
+<form class="tool-bar" action="{{ paths::Contacts }}" method="get">
+  <label>
+    Search Term
+    <input id="search" type="search" name="q" value="{{ search_term.as_deref().unwrap_or("") }}">
+    <input type="submit" value="Search">
+  </label>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>First</th>
+      <th>Last</th>
+      <th>Phone</th>
+      <th>Email</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for contact in contacts %}
+      <tr>
+        <td>{{ contact.first.as_deref().unwrap_or("") }}</td>
+        <td>{{ contact.last.as_deref().unwrap_or("") }}</td>
+        <td>{{ contact.phone.as_deref().unwrap_or("") }}</td>
+        <td>{{ contact.email.as_deref().unwrap_or("") }}</td>
+        <td>
+          <a href="{{ paths::EditContact::new(contact.id) }}">Edit</a>
+          <a href="{{ paths::Contact::new(contact.id) }}">View</a>
+        </td>
+      </tr>
+    {% endfor %}
+</table>
+<p>
+  <a href="{{ paths::NewContact }}">Add Contact</a>
+</p>
+{% endblock content %}
