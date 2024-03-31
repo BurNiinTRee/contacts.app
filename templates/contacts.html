@@ -32,6 +32,22 @@
         </td>
       </tr>
     {% endfor %}
+    {% if contacts.len() == 10 %}
+      <tr>
+        <td colspan="5" style="text-align: center">
+          <span
+            hx-target="closest tr"
+            hx-swap="outerHTML"
+            hx-select="tbody > tr"
+            hx-trigger="revealed"
+            hx-get="{{ Path.with_params(search_term, Some(page + 1)) }}"
+          >
+            Load More
+          </span>
+        </td>
+      </tr>
+    {% endif %}
+  </tbody>
 </table>
 <div>
   <span style="float: right">
