@@ -5,8 +5,15 @@
 <form class="tool-bar" action="{{ Path }}" method="get">
   <label>
     Search Term
-    <input id="search" type="search" name="q" value="{{ search_term.as_deref().unwrap_or("") }}">
+    <input id="search" type="search" name="q" value="{{ search_term.as_deref().unwrap_or("") }}"
+        hx-trigger="search, keyup delay:200ms changed"
+        hx-get="{{ Path }}"
+        hx-target="tbody"
+        hx-push-url="true"
+        hx-indicator="next img"
+    >
     <input type="submit" value="Search">
+    <img class="htmx-indicator" src="/assets/img/spinner.svg">
   </label>
 </form>
 
@@ -20,6 +27,7 @@
     </tr>
   </thead>
   <tbody>
+    {% block table %}
     {% for contact in contacts %}
       <tr>
         <td>{{ contact.first }}</td>
@@ -47,6 +55,7 @@
         </td>
       </tr>
     {% endif %}
+    {% endblock table %}
   </tbody>
 </table>
 <div>

@@ -7,6 +7,7 @@ use axum::{
 };
 use axum_extra::routing::{TypedPath, WithQueryParams};
 use axum_flash::{Flash, IncomingFlashes};
+use axum_htmx::HxTrigger;
 use serde::{Deserialize, Serialize};
 
 pub mod item;
@@ -19,11 +20,19 @@ pub struct Path;
 
 #[derive(Template)]
 #[template(path = "contacts.html")]
-pub struct Tmpl {
+pub struct Page {
     pub layout: shared::Layout,
     pub search_term: Option<String>,
     pub page: u64,
     pub contacts: Vec<shared::Contact>,
+}
+
+#[derive(Template)]
+#[template(path = "contacts.html", block = "table")]
+pub struct Table {
+    pub contacts: Vec<shared::Contact>,
+    pub search_term: Option<String>,
+    pub page: u64,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -48,9 +57,10 @@ impl Path {
 pub async fn get(
     _: Path,
     flashes: IncomingFlashes,
+    HxTrigger(hx_trigger): HxTrigger,
     State(contacts): State<model::Contacts>,
     Query(query): Query<Params>,
-) -> Result<impl IntoResponse> {
+) -> Result<Response> {
     let page = query.page.unwrap_or(1);
     let contacts = match query.q {
         Some(ref q) => {
@@ -82,17 +92,26 @@ pub async fn get(
                 .collect()
         }
     };
-    Ok((
-        flashes.clone(),
-        Tmpl {
-            layout: shared::Layout {
-                flashes: Some(flashes),
-            },
+    match hx_trigger {
+        Some(trigger) if trigger == "search" => Ok(Table {
             contacts,
             page,
             search_term: query.q,
-        },
-    ))
+        }
+        .into_response()),
+        _ => Ok((
+            flashes.clone(),
+            Page {
+                layout: shared::Layout {
+                    flashes: Some(flashes),
+                },
+                contacts,
+                page,
+                search_term: query.q,
+            },
+        )
+            .into_response()),
+    }
 }
 
 pub async fn post(
