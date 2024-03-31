@@ -1,8 +1,7 @@
 use axum::{
     extract::FromRef,
     http::StatusCode,
-    response::{IntoResponse, Redirect, Response},
-    routing::get,
+    response::{IntoResponse, Response},
 };
 use axum_extra::routing::RouterExt;
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
@@ -42,10 +41,7 @@ async fn main() -> anyhow::Result<()> {
     axum::serve(
         listener,
         axum::Router::new()
-            .route(
-                "/",
-                get(move || async move { Redirect::to(&pages::contacts::Path.to_string()) }),
-            )
+            .typed_get(pages::get)
             .typed_get(pages::contacts::get)
             .typed_post(pages::contacts::post)
             .typed_get(pages::contacts::new::get)
