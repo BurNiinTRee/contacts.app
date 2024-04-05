@@ -44,6 +44,8 @@ async fn main() -> anyhow::Result<()> {
             .typed_get(pages::get)
             .typed_get(pages::contacts::get)
             .typed_post(pages::contacts::post)
+            .typed_delete(pages::contacts::delete)
+            .typed_get(pages::contacts::count::get)
             .typed_get(pages::contacts::new::get)
             .typed_get(pages::contacts::item::get)
             .typed_get(pages::contacts::item::edit::get)

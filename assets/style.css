@@ -14,7 +14,7 @@ a {
   color: green;
 }
 
-a ~ a {
+td a ~ a {
   margin-left: 1em;
 }
 
@@ -28,12 +28,27 @@ tbody {
   border-block: 3px solid;
 }
 
-thead th:nth-child(1), thead th:nth-child(2) {
+td p {
+  margin: 10px;
+/*   max-height: 0px; */
+/*   overflow: hidden; */
+}
+
+tr.htmx-swapping p {
+  opacity: 0;
+  transition: opacity 500ms ease-in;
+}
+
+thead th:first-child {
+  width: 20px;
+}
+
+thead th:nth-child(2), thead th:nth-child(3) {
   width: 20%
 }
 
-thead th:nth-child(3) {
-  width: 8em;
+thead th:nth-child(4) {
+  width: 16em;
 }
 
 thead th:last-child {
@@ -41,7 +56,6 @@ thead th:last-child {
 }
 
 td,th {
-  padding: 10px;
   text-align: left;
 }
 

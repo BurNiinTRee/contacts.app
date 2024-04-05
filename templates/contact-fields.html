@@ -24,14 +24,9 @@
   <p>
     <label>
       Email
-      <input 
-        name="email" type="email" 
-        hx-get="{{ super::item::email::Path::new(contact.id) }}"
-        hx-target="next span.error"
-        hx-trigger="change, keyup delay:200ms changed"
-        placeholder="Email"
-        value="{{ contact.email }}"
-      >
+      <input name="email" type="email" hx-get="{{ super::item::email::Path::new(contact.id) }}"
+        hx-target="next span.error" hx-trigger="change, keyup delay:200ms changed" placeholder="Email"
+        value="{{ contact.email }}">
       <span class="error">{{ contact.errors.email }}</span>
     </label>
   </p>

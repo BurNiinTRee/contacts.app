@@ -1,7 +1,8 @@
 use crate::{model, Result};
+use anyhow::Context;
 use askama::Template;
 use axum::{
-    extract::{Query, State},
+    extract::{Query, RawForm, State},
     response::{IntoResponse, Redirect, Response},
     Form,
 };
@@ -10,6 +11,7 @@ use axum_flash::{Flash, IncomingFlashes};
 use axum_htmx::HxTrigger;
 use serde::{Deserialize, Serialize};
 
+pub mod count;
 pub mod item;
 pub mod new;
 pub mod shared;
@@ -28,8 +30,8 @@ pub struct Page {
 }
 
 #[derive(Template)]
-#[template(path = "contacts.html", block = "table")]
-pub struct Table {
+#[template(path = "contacts.html", block = "rows")]
+pub struct Rows {
     pub contacts: Vec<shared::Contact>,
     pub search_term: Option<String>,
     pub page: u64,
@@ -93,7 +95,7 @@ pub async fn get(
         }
     };
     match hx_trigger {
-        Some(trigger) if trigger == "search" => Ok(Table {
+        Some(trigger) if trigger == "search" => Ok(Rows {
             contacts,
             page,
             search_term: query.q,
@@ -150,4 +152,34 @@ pub async fn post(
             Err(err)?
         }
     }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DeleteForm {
+    selected_contact_ids: Vec<i64>,
+}
+
+pub async fn delete(
+    _: Path,
+    flash: Flash,
+    State(contacts): State<model::Contacts>,
+    RawForm(form): RawForm,
+) -> Result<Response> {
+    for param in dbg!(form).split(|b| *b == b'&') {
+        let mut things = param.splitn(2, |b| *b == b'=');
+        let name = things.next().context("param had no name")?;
+        let value: i64 = things
+            .next()
+            .context("param had no value")
+            .and_then(|bytes| std::str::from_utf8(bytes).context("value was not utf-8"))
+            .and_then(|s| s.parse().context("value was not a number"))?;
+        if name == b"selected_contact_ids" {
+            contacts.delete_by_id(value).await?;
+        }
+    }
+    Ok((
+        flash.success("Contact deleted"),
+        Redirect::to(&Path.to_string()),
+    )
+        .into_response())
 }

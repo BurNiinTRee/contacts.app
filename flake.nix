@@ -54,10 +54,10 @@
           containers = lib.mkForce {};
           languages.rust.enable = true;
           packages = [
-            pkgs.clippy
             pkgs.cargo-watch
             pkgs.sqlx-cli
             pkgs.mold
+            pkgs.vscode-langservers-extracted
           ];
           env = {
             DATABASE_URL = "sqlite:data.db?mode=rwc";

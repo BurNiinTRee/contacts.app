@@ -6,69 +6,71 @@
   <label>
     Search Term
     <input id="search" type="search" name="q" value="{{ search_term.as_deref().unwrap_or("") }}"
-        hx-trigger="search, keyup delay:200ms changed"
-        hx-get="{{ Path }}"
-        hx-target="tbody"
-        hx-push-url="true"
-        hx-indicator="next img"
-    >
+      hx-trigger="search, keyup delay:200ms changed" hx-get="{{ Path }}" hx-target="tbody" hx-push-url="true"
+      hx-indicator="next img">
     <input type="submit" value="Search">
     <img class="htmx-indicator" src="/assets/img/spinner.svg">
   </label>
 </form>
+<p>
+  <a href="{{ new::Path }}">Add Contact</a> <span hx-get="{{ count::Path }}" hx-trigger="load"><img
+      class="htmx-indicator" src="/assets/img/spinner.svg"></span>
+</p>
+<form>
+  <button hx-delete="{{ Path }}" hx-confirm="Are you sure you want to delete these contacts?" hx-target="body">
+    Delete Selected Contacts
+  </button>
 
-<table>
-  <thead>
-    <tr>
-      <th>First</th>
-      <th>Last</th>
-      <th>Phone</th>
-      <th>Email</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% block table %}
-    {% for contact in contacts %}
+  <table>
+    <thead>
       <tr>
-        <td>{{ contact.first }}</td>
-        <td>{{ contact.last }}</td>
-        <td>{{ contact.phone }}</td>
-        <td>{{ contact.email }}</td>
+        <th></th>
+        <th>First</th>
+        <th>Last</th>
+        <th>Phone</th>
+        <th>Email</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% block rows %}
+      {% for contact in contacts %}
+      <tr>
+        <td><input type="checkbox" name="selected_contact_ids" value="{{ contact.id }}"></td>
         <td>
-          <a href="{{ item::edit::Path::new(contact.id) }}">Edit</a>
-          <a href="{{ item::Path::new(contact.id) }}">View</a>
+          <p>{{ contact.first }}</p>
+        </td>
+        <td>
+          <p>{{ contact.last }}</p>
+        </td>
+        <td>
+          <p>{{ contact.phone }}</p>
+        </td>
+        <td>
+          <p>{{ contact.email }}</p>
+        </td>
+        <td>
+          <p>
+            <a href="{{ item::edit::Path::new(contact.id) }}">Edit</a>
+            <a href="{{ item::Path::new(contact.id) }}">View</a>
+            <a href="#" hx-delete="{{ item::Path::new(contact.id) }}"
+              hx-confirm="Are you sure you want to delete this contact?" hx-target="closest tr"
+              hx-swap="outerHTML swap:500ms">Delete</a>
+          </p>
         </td>
       </tr>
-    {% endfor %}
-    {% if contacts.len() == 10 %}
+      {% endfor %}
+      {% if contacts.len() == 10 %}
       <tr>
         <td colspan="5" style="text-align: center">
-          <span
-            hx-target="closest tr"
-            hx-swap="outerHTML"
-            hx-select="tbody > tr"
-            hx-trigger="revealed"
-            hx-get="{{ Path.with_params(search_term, Some(page + 1)) }}"
-          >
+          <span hx-target="closest tr" hx-swap="outerHTML" hx-select="tbody > tr" hx-trigger="revealed"
+            hx-get="{{ Path.with_params(search_term, Some(page + 1)) }}">
             Load More
           </span>
         </td>
       </tr>
-    {% endif %}
-    {% endblock table %}
-  </tbody>
-</table>
-<div>
-  <span style="float: right">
-  {% if page > 1 %}
-    <a href="{{ Path.with_params(search_term, Some(page - 1)) }}">Previous</a>
-  {% endif %}
-  {% if contacts.len() == 10 %}
-    <a href="{{ Path.with_params(search_term, Some(page + 1)) }}">Next</a>
-  {% endif %}
-  </span>
-</div>
-<p>
-  <a href="{{ new::Path }}">Add Contact</a>
-</p>
+      {% endif %}
+      {% endblock rows %}
+    </tbody>
+  </table>
+</form>
 {% endblock content %}

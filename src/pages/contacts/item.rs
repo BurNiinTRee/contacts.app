@@ -13,6 +13,7 @@ use axum::{
 };
 use axum_extra::routing::TypedPath;
 use axum_flash::{Flash, IncomingFlashes};
+use axum_htmx::HxTrigger;
 use serde::Deserialize;
 
 pub mod edit;
@@ -111,11 +112,16 @@ pub async fn put(
 pub async fn delete(
     Path { id }: Path,
     flash: Flash,
+    HxTrigger(hx_trigger): HxTrigger,
     State(contacts): State<model::Contacts>,
-) -> Result<(Flash, Redirect)> {
+) -> Result<Response> {
     contacts.delete_by_id(id).await?;
-    Ok((
-        flash.success("Contact deleted"),
-        Redirect::to(&pages::contacts::Path.to_string()),
-    ))
+    match hx_trigger.as_deref() {
+        Some("delete-btn") => Ok((
+            flash.success("Contact deleted"),
+            Redirect::to(&pages::contacts::Path.to_string()),
+        )
+            .into_response()),
+        _ => Ok(().into_response()),
+    }
 }

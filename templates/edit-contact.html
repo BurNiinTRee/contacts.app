@@ -7,12 +7,8 @@ Edit Contact
 <form action="{{ Path::new(contact.id) }}" method="post">
   {{ super::super::shared::ContactFields::new(contact)|safe }}
 </form>
-<button
-  hx-delete="{{ super::Path::new(contact.id) }}"
-  hx-confirm="Are you sure you want to delete this contact?"
-  hx-target="body"
-  hx-push-url="true"
->
+<button id="delete-btn" hx-delete="{{ super::Path::new(contact.id) }}"
+  hx-confirm="Are you sure you want to delete this contact?" hx-target="body" hx-push-url="true">
   Delete Contact
 </button>
 <p>
