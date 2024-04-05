@@ -25,10 +25,11 @@ impl Contacts {
     }
 
     pub async fn count(&self) -> Result<u64> {
-        let wait = tokio::time::sleep(Duration::from_secs(2));
-        let result = sqlx::query!("SELECT COUNT(*) as count FROM Contacts").fetch_one(&self.db);
-        let result = tokio::join!(result, wait);
-        Ok(result.0?.count as u64)
+        let (result, _) = tokio::join!(
+            sqlx::query!("SELECT COUNT(*) as count FROM Contacts").fetch_one(&self.db),
+            tokio::time::sleep(Duration::from_secs(2))
+        );
+        Ok(result?.count as u64)
     }
 
     pub async fn get_by_id(&self, id: i64) -> Result<Option<Contact>> {
