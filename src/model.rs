@@ -1,8 +1,14 @@
-use std::time::Duration;
+use std::{
+    ops::{Deref, DerefMut},
+    sync::Arc,
+    time::Duration,
+};
 
+use futures::{stream::StreamExt, Stream};
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use thiserror::Error;
+use tokio::{fs::File, io::AsyncWriteExt, sync::Mutex, task::AbortHandle};
 
 type Result<T, E = self::Error> = std::result::Result<T, E>;
 
@@ -52,6 +58,15 @@ impl Contacts {
         .fetch_optional(&self.db)
         .await?;
         Ok(contact)
+    }
+
+    pub fn get_all(&self) -> impl Stream<Item = Result<Contact>> + '_ {
+        sqlx::query_as!(
+            Contact,
+            "SELECT id, first, last, phone, email FROM Contacts"
+        )
+        .fetch(&self.db)
+        .map(|res| Ok(res?))
     }
 
     pub async fn get_filtered_page(&self, search_term: &str, page: u64) -> Result<Vec<Contact>> {
@@ -150,8 +165,116 @@ pub struct ContactCandidate {
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("archiver is already running")]
+    ArchiverRunning,
     #[error("contact with this email already exists")]
     DuplicateEmail,
     #[error("unknown database error")]
-    DatabaseError(#[from] sqlx::Error),
+    Database(#[from] sqlx::Error),
+    #[error("unknown io error")]
+    Io(#[from] std::io::Error),
+}
+
+#[derive(Clone)]
+pub struct Archiver {
+    contacts: Contacts,
+    state: Arc<Mutex<ArchiverState>>,
+}
+
+enum ArchiverState {
+    Waiting,
+    Running {
+        progress: Arc<Mutex<f32>>,
+        abort_handle: AbortHandle,
+    },
+    Complete(Arc<Result<()>>),
+}
+
+pub enum ArchiverStatus {
+    Waiting,
+    Running(f32),
+    Complete(Arc<Result<()>>),
+}
+
+impl Archiver {
+    pub fn new(contacts: Contacts) -> Self {
+        Self {
+            contacts,
+            state: Arc::new(Mutex::new(ArchiverState::Waiting)),
+        }
+    }
+
+    pub async fn status(&self) -> ArchiverStatus {
+        let mut state = self.state.lock().await;
+        match state.deref_mut() {
+            ArchiverState::Waiting => ArchiverStatus::Waiting,
+            ArchiverState::Running { progress, .. } => {
+                ArchiverStatus::Running(*progress.lock().await)
+            }
+            ArchiverState::Complete(result) => ArchiverStatus::Complete(result.clone()),
+        }
+    }
+
+    pub async fn run(&self) -> Result<()> {
+        if let ArchiverState::Running { .. } = self.state.lock().await.deref() {
+            return Err(Error::ArchiverRunning);
+        }
+        let contacts = self.contacts.clone();
+        let mut out_file = File::create("run/export.csv").await?;
+        out_file
+            .write_all(b"id,firstname,lastname,phone,email\n")
+            .await?;
+        let progress = Arc::new(Mutex::new(0.0));
+        let task_progress = progress.clone();
+        let state = self.state.clone();
+
+        let handle = tokio::spawn(async move {
+            let res: Result<()> = async move {
+                let count = contacts.count().await?;
+                let mut contacts = contacts.get_all().enumerate();
+                while let Some((
+                    written,
+                    Ok(Contact {
+                        id,
+                        first,
+                        last,
+                        phone,
+                        email,
+                    }),
+                )) = contacts.next().await
+                {
+                    tokio::time::sleep(Duration::from_nanos(1)).await;
+                    out_file
+                        .write_all(format!("{id},{first},{last},{phone},{email}\n").as_bytes())
+                        .await?;
+                    if written & 0xFF == 0 {
+                        let progress = written as f32 / count as f32;
+                        *task_progress.lock().await = progress;
+                    }
+                }
+                Ok(out_file.shutdown().await?)
+            }
+            .await;
+            *state.lock().await = ArchiverState::Complete(Arc::new(res))
+        });
+
+        *self.state.lock().await = ArchiverState::Running {
+            progress,
+            abort_handle: handle.abort_handle(),
+        };
+
+        Ok(())
+    }
+
+    pub async fn reset(&self) {
+        let mut state = self.state.lock().await;
+        match state.deref() {
+            ArchiverState::Waiting => {}
+            ArchiverState::Running { abort_handle, .. } => {
+                abort_handle.abort();
+                *state = ArchiverState::Waiting;
+            }
+            ArchiverState::Complete(_) => *state = ArchiverState::Waiting,
+        }
+    }
 }

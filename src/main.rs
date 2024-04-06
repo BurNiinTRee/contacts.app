@@ -13,6 +13,7 @@ mod pages;
 struct AppState {
     db: SqlitePool,
     contacts: model::Contacts,
+    archiver: model::Archiver,
     flash_config: axum_flash::Config,
 }
 
@@ -28,12 +29,14 @@ async fn main() -> anyhow::Result<()> {
     sqlx::migrate!().run(&db).await?;
 
     let contacts = model::Contacts::new(db.clone());
+    let archiver = model::Archiver::new(contacts.clone());
 
     let flash_config = axum_flash::Config::new(axum_flash::Key::generate());
 
     let app_state = AppState {
         db,
         contacts,
+        archiver,
         flash_config,
     };
 
@@ -45,6 +48,9 @@ async fn main() -> anyhow::Result<()> {
             .typed_get(pages::contacts::get)
             .typed_post(pages::contacts::post)
             .typed_delete(pages::contacts::delete)
+            .typed_get(pages::contacts::archive::get)
+            .typed_post(pages::contacts::archive::post)
+            .typed_delete(pages::contacts::archive::delete)
             .typed_get(pages::contacts::count::get)
             .typed_get(pages::contacts::new::get)
             .typed_get(pages::contacts::item::get)
@@ -53,6 +59,10 @@ async fn main() -> anyhow::Result<()> {
             .typed_get(pages::contacts::item::email::get)
             .typed_delete(pages::contacts::item::delete)
             .nest_service("/assets", tower_http::services::ServeDir::new("assets"))
+            .route_service(
+                &pages::contacts::archive::file::Path.to_string(),
+                tower_http::services::ServeFile::new("run/export.csv"),
+            )
             .with_state(app_state),
     )
     .await?;

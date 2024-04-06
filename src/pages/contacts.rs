@@ -1,4 +1,7 @@
-use crate::{model, Result};
+use crate::{
+    model::{self, ArchiverStatus},
+    Result,
+};
 use anyhow::Context;
 use askama::Template;
 use axum::{
@@ -11,6 +14,7 @@ use axum_flash::{Flash, IncomingFlashes};
 use axum_htmx::HxTrigger;
 use serde::{Deserialize, Serialize};
 
+pub mod archive;
 pub mod count;
 pub mod item;
 pub mod new;
@@ -25,6 +29,7 @@ pub struct Path;
 pub struct Page {
     pub layout: shared::Layout,
     pub search_term: Option<String>,
+    pub archiver_status: ArchiverStatus,
     pub page: u64,
     pub contacts: Vec<shared::Contact>,
 }
@@ -35,6 +40,11 @@ pub struct Rows {
     pub contacts: Vec<shared::Contact>,
     pub search_term: Option<String>,
     pub page: u64,
+}
+#[derive(Template)]
+#[template(path = "contacts.html", block = "archive")]
+pub struct Archive {
+    archiver_status: ArchiverStatus,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -61,6 +71,7 @@ pub async fn get(
     flashes: IncomingFlashes,
     HxTrigger(hx_trigger): HxTrigger,
     State(contacts): State<model::Contacts>,
+    State(archiver): State<model::Archiver>,
     Query(query): Query<Params>,
 ) -> Result<Response> {
     let page = query.page.unwrap_or(1);
@@ -107,6 +118,7 @@ pub async fn get(
                 layout: shared::Layout {
                     flashes: Some(flashes),
                 },
+                archiver_status: archiver.status().await,
                 contacts,
                 page,
                 search_term: query.q,

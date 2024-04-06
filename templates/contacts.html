@@ -16,6 +16,28 @@
   <a href="{{ new::Path }}">Add Contact</a> <span hx-get="{{ count::Path }}" hx-trigger="load"><img
       class="htmx-indicator" src="/assets/img/spinner.svg"></span>
 </p>
+<div id="archive-ui" hx-target="this">
+  {% block archive %}
+  {% match archiver_status %}
+  {% when ArchiverStatus::Waiting %}
+  <button hx-post="{{ archive::Path }}">
+    Download Contact Archive
+  </button>
+  {% when ArchiverStatus::Running with (progress) %}
+  <div hx-get="{{ archive::Path }}" hx-trigger="load delay:500ms">
+    Creating Archive...
+    <button hx-delete="{{ archive::Path }}">Cancel</button>
+    <div class="progress">
+      <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuenow="{{ progress * 100.0 }}"
+        style="width: {{ progress * 100.0 }}%"></div>
+    </div>
+  </div>
+  {% when ArchiverStatus::Complete with (res) %}
+  <a hx-boost="false" href="{{ archive::file::Path }}">Archive Ready to download. &downarrow;</a>
+  <button hx-delete="{{ archive::Path }}">Reset</button>
+  {% endmatch %}
+  {% endblock archive %}
+</div>
 <form>
   <button hx-delete="{{ Path }}" hx-confirm="Are you sure you want to delete these contacts?" hx-target="body">
     Delete Selected Contacts
