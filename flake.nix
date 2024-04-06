@@ -56,6 +56,7 @@
           packages = [
             pkgs.cargo-watch
             pkgs.sqlx-cli
+            pkgs.dart-sass
             pkgs.mold
             pkgs.vscode-langservers-extracted
           ];

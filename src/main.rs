@@ -6,6 +6,7 @@ use axum::{
 use axum_extra::routing::RouterExt;
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 
+mod assets;
 mod model;
 mod pages;
 
@@ -62,6 +63,11 @@ async fn main() -> anyhow::Result<()> {
             .route_service(
                 &pages::contacts::archive::file::Path.to_string(),
                 tower_http::services::ServeFile::new("run/export.csv"),
+            )
+            .typed_get(assets::get_style)
+            .route_service(
+                &assets::StyleSource.to_string(),
+                tower_http::services::ServeFile::new("styles/index.scss"),
             )
             .with_state(app_state),
     )

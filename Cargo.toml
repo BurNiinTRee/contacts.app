@@ -8,6 +8,9 @@ default-run = "contacts"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[build-dependencies]
+anyhow = "*"
+
 [dependencies]
 anyhow = "1.0.79"
 axum = { version = "0.7.4", features = ["macros"] }
@@ -18,8 +21,9 @@ askama = { git = "https://github.com/BurNiinTRee/askama", branch = "extract-bloc
 askama_axum = { git = "https://github.com/BurNiinTRee/askama", branch = "extract-blocks"}
 serde = { version = "1.0.197", features = ["derive"] }
 sqlx = { version = "0.7.3", features = ["sqlite", "runtime-tokio-rustls"]}
-tokio = { version = "1.36.0", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.36.0", features = ["rt-multi-thread", "macros", "process"] }
 tower-http = { version = "0.5.2", features = ["trace", "fs"] }
+tower-service = "0.3.2"
 thiserror = "1.0.58"
 futures = "0.3.30"
 
