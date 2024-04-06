@@ -57,12 +57,13 @@
       {% block rows %}
       {% for contact in contacts %}
       <tr>
-        <td><input type="checkbox" name="selected_contact_ids" value="{{ contact.id }}"></td>
-        <td>
-          <p>{{ contact.first }}</p>
+        <td><input id="select-{{ contact.id }}" type="checkbox" name="selected_contact_ids" value="{{ contact.id }}">
         </td>
         <td>
-          <p>{{ contact.last }}</p>
+          <p><label for="select-{{ contact.id }}">{{ contact.first }}</label></p>
+        </td>
+        <td>
+          <p><label for="select-{{ contact.id }}">{{ contact.last }}</label></p>
         </td>
         <td>
           <p>{{ contact.phone }}</p>
