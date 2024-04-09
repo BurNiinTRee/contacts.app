@@ -20,6 +20,7 @@ struct AppState {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    console_subscriber::init();
     let db_options = std::env::var("DATABASE_URL")
         .as_deref()
         .unwrap_or("sqlite:data.db?mode=rwc")

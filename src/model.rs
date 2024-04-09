@@ -1,6 +1,6 @@
 use std::{
     ops::{Deref, DerefMut},
-    sync::Arc,
+    sync::{Arc, Mutex},
     time::Duration,
 };
 
@@ -8,7 +8,7 @@ use futures::{stream::StreamExt, Stream};
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use thiserror::Error;
-use tokio::{fs::File, io::AsyncWriteExt, sync::Mutex, task::AbortHandle};
+use tokio::{fs::File, io::AsyncWriteExt, task::AbortHandle};
 
 type Result<T, E = self::Error> = std::result::Result<T, E>;
 
@@ -205,18 +205,18 @@ impl Archiver {
     }
 
     pub async fn status(&self) -> ArchiverStatus {
-        let mut state = self.state.lock().await;
+        let mut state = self.state.lock().unwrap();
         match state.deref_mut() {
             ArchiverState::Waiting => ArchiverStatus::Waiting,
             ArchiverState::Running { progress, .. } => {
-                ArchiverStatus::Running(*progress.lock().await)
+                ArchiverStatus::Running(*progress.lock().unwrap())
             }
             ArchiverState::Complete(result) => ArchiverStatus::Complete(result.clone()),
         }
     }
 
     pub async fn run(&self) -> Result<()> {
-        if let ArchiverState::Running { .. } = self.state.lock().await.deref() {
+        if let ArchiverState::Running { .. } = self.state.lock().unwrap().deref() {
             return Err(Error::ArchiverRunning);
         }
         let contacts = self.contacts.clone();
@@ -249,16 +249,16 @@ impl Archiver {
                         .await?;
                     if written & 0xFF == 0 {
                         let progress = written as f32 / count as f32;
-                        *task_progress.lock().await = progress;
+                        *task_progress.lock().unwrap() = progress;
                     }
                 }
                 Ok(out_file.shutdown().await?)
             }
             .await;
-            *state.lock().await = ArchiverState::Complete(Arc::new(res))
+            *state.lock().unwrap() = ArchiverState::Complete(Arc::new(res))
         });
 
-        *self.state.lock().await = ArchiverState::Running {
+        *self.state.lock().unwrap() = ArchiverState::Running {
             progress,
             abort_handle: handle.abort_handle(),
         };
@@ -267,7 +267,7 @@ impl Archiver {
     }
 
     pub async fn reset(&self) {
-        let mut state = self.state.lock().await;
+        let mut state = self.state.lock().unwrap();
         match state.deref() {
             ArchiverState::Waiting => {}
             ArchiverState::Running { abort_handle, .. } => {
