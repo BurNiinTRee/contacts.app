@@ -55,9 +55,10 @@
           languages.rust.enable = true;
           packages = [
             pkgs.cargo-watch
-            pkgs.sqlx-cli
             pkgs.dart-sass
             pkgs.mold
+            pkgs.sqlx-cli
+            pkgs.tokio-console
             pkgs.vscode-langservers-extracted
           ];
           env = {
