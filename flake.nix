@@ -25,6 +25,7 @@
         devenv.shells.default = {
           lib,
           pkgs,
+          config,
           ...
         }: let
           sqlite-icu-extension = pkgs.stdenv.mkDerivation (attrs: {
@@ -52,7 +53,19 @@
         in {
           # https://github.com/cachix/devenv/issues/528
           containers = lib.mkForce {};
-          languages.rust.enable = true;
+          languages.rust = {
+            enable = true;
+            channel = "nightly";
+            components = [
+              "cargo"
+              "clippy"
+              "llvm-tools-preview"
+              "rust-analyzer"
+              "rust-src"
+              "rustc"
+              "rustfmt"
+            ];
+          };
           packages = [
             pkgs.cargo-watch
             pkgs.dart-sass
@@ -61,9 +74,23 @@
             pkgs.tokio-console
             pkgs.vscode-langservers-extracted
           ];
+          services.postgres = {
+            enable = true;
+            initialDatabases = [
+              {
+                name = "contacts";
+              }
+            ];
+          };
           env = {
-            DATABASE_URL = "sqlite:data.db?mode=rwc";
-            CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS = ["-Clink-arg=-fuse-ld=mold" "-Clinker=clang"];
+            DATABASE_URL = "postgresql:///contacts";
+            CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS = [
+              "-Clink-arg=-fuse-ld=mold"
+              "-Clinker=clang"
+              "--cfg"
+              "tokio_unstable"
+            ];
+            RUST_LOG = "info";
             SQLITE_ICU_EXTENSION = sqlite-icu-extension + /lib/libSqliteIcu.so;
           };
         };

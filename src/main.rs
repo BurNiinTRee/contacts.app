@@ -5,6 +5,8 @@ use axum::{
 };
 use axum_extra::routing::RouterExt;
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
+use tracing::info;
+use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
 
 mod assets;
 mod model;
@@ -43,6 +45,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    info!("Listening on http://{}", listener.local_addr()?);
     axum::serve(
         listener,
         axum::Router::new()

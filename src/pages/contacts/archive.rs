@@ -1,4 +1,5 @@
 use crate::{model, Result};
+use tracing::{event, instrument, Level};
 
 use axum::{
     extract::State,
@@ -18,6 +19,7 @@ pub mod file {
 #[typed_path("/contacts/archive")]
 pub struct Path;
 
+#[instrument(skip_all)]
 pub async fn post(_: Path, State(archiver): State<model::Archiver>) -> Result<Response> {
     archiver.run().await?;
     Ok(super::Archive {

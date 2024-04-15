@@ -18,20 +18,22 @@ fn main() -> Result<()> {
 
     for n in 0..num {
         eprintln!("generating {n}th entry");
-        let first: &'static str = fake::faker::name::raw::FirstName(EN).fake();
-        let last: &'static str = fake::faker::name::raw::LastName(EN).fake();
+        let mut first: &'static str = fake::faker::name::raw::FirstName(EN).fake();
+        let mut last: &'static str = fake::faker::name::raw::LastName(EN).fake();
         let phone: String = fake::faker::phone_number::raw::PhoneNumber(EN).fake();
-        let mut email: String = fake::faker::internet::raw::SafeEmail(EN).fake();
+        let mut email: String = format!("{first}.{last}@example.com");
         let mut tries = 1;
         while used_emails.contains(&email) {
-            email = fake::faker::internet::raw::SafeEmail(EN).fake();
+            first = fake::faker::name::raw::FirstName(EN).fake();
+            last = fake::faker::name::raw::LastName(EN).fake();
+            email = format!("{first}.{last}@example.com");
             tries += 1;
             if tries % 1000 == 0 {
                 eprintln!("tried {tries} times");
             }
         }
 
-        write!(
+        writeln!(
             out,
             r#"("{}", "{}", "{}", "{}"),"#,
             first, last, phone, email
