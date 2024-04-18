@@ -1,5 +1,7 @@
 use askama::Template;
 
+use crate::model::ContactId;
+
 #[derive(Template)]
 #[template(path = "contact-fields.html")]
 pub struct ContactFields {
@@ -29,7 +31,7 @@ impl Layout {
 
 #[derive(Default, Clone)]
 pub struct Contact {
-    pub id: i64,
+    pub id: ContactId,
     pub first: String,
     pub last: String,
     pub phone: String,

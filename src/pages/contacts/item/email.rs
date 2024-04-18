@@ -5,16 +5,19 @@ use axum::{
 use axum_extra::routing::TypedPath;
 use serde::Deserialize;
 
-use crate::{model, Result};
+use crate::{
+    model::{self, ContactId},
+    Result,
+};
 
 #[derive(TypedPath, Deserialize)]
 #[typed_path("/contacts/:id/email")]
 pub struct Path {
-    pub id: i64,
+    pub id: ContactId,
 }
 
 impl Path {
-    pub fn new(id: &i64) -> Self {
+    pub fn new(id: &ContactId) -> Self {
         Self { id: *id }
     }
 }

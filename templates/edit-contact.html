@@ -4,7 +4,7 @@ Edit Contact
 {% endblock title %}
 
 {% block content %}
-<form action="{{ Path::new(contact.id) }}" method="post">
+<form action="{{ super::Path::new(contact.id) }}" method="post">
   {{ super::super::shared::ContactFields::new(contact)|safe }}
 </form>
 <button id="delete-btn" hx-delete="{{ super::Path::new(contact.id) }}"

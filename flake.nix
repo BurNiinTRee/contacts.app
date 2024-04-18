@@ -55,16 +55,16 @@
           containers = lib.mkForce {};
           languages.rust = {
             enable = true;
-            channel = "nightly";
-            components = [
-              "cargo"
-              "clippy"
-              "llvm-tools-preview"
-              "rust-analyzer"
-              "rust-src"
-              "rustc"
-              "rustfmt"
-            ];
+            # channel = "nightly";
+            # components = [
+            #   "cargo"
+            #   "clippy"
+            #   "llvm-tools-preview"
+            #   "rust-analyzer"
+            #   "rust-src"
+            #   "rustc"
+            #   "rustfmt"
+            # ];
           };
           packages = [
             pkgs.cargo-watch
@@ -74,14 +74,6 @@
             pkgs.tokio-console
             pkgs.vscode-langservers-extracted
           ];
-          services.postgres = {
-            enable = true;
-            initialDatabases = [
-              {
-                name = "contacts";
-              }
-            ];
-          };
           env = {
             DATABASE_URL = "postgresql:///contacts";
             CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS = [
@@ -93,6 +85,16 @@
             RUST_LOG = "info";
             SQLITE_ICU_EXTENSION = sqlite-icu-extension + /lib/libSqliteIcu.so;
           };
+          services.postgres = {
+            enable = true;
+            initialDatabases = [
+              {
+                name = "contacts";
+              }
+            ];
+          };
+          process.implementation = "overmind";
+          processes.cargo-watch.exec = "cargo watch --clear -x 'sqlx database setup' -x 'run'";
         };
       };
     });

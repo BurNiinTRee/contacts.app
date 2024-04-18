@@ -1,9 +1,3 @@
-use crate::{
-    model,
-    pages::{self, contacts::shared},
-    Result,
-};
-use anyhow::Context;
 use askama::Template;
 use axum::{
     extract::State,
@@ -16,17 +10,23 @@ use axum_flash::{Flash, IncomingFlashes};
 use axum_htmx::HxTrigger;
 use serde::Deserialize;
 
+use crate::{
+    model::{self, ContactId},
+    pages::{self, contacts::shared},
+    Result,
+};
+
 pub mod edit;
 pub mod email;
 
 #[derive(TypedPath, Deserialize)]
 #[typed_path("/contacts/:id")]
 pub struct Path {
-    pub id: i64,
+    pub id: ContactId,
 }
 impl Path {
-    pub fn new(id: &i64) -> Self {
-        Self { id: *id }
+    pub fn new(&id: &ContactId) -> Self {
+        Self { id }
     }
 }
 
@@ -76,12 +76,7 @@ pub async fn put(
     match result {
         Ok(res) => Ok((
             flash.success("Contact updated"),
-            Redirect::to(
-                &pages::contacts::item::Path {
-                    id: res.with_context(|| format!("No Contact with id: {}", id))?,
-                }
-                .to_string(),
-            ),
+            Redirect::to(&pages::contacts::item::Path { id: res }.to_string()),
         )
             .into_response()),
         Err(model::Error::DuplicateEmail) => Ok((

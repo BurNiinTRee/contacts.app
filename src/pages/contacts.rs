@@ -146,7 +146,7 @@ pub async fn post(
             new::Tmpl {
                 layout: shared::Layout { flashes: None },
                 contact: shared::Contact {
-                    id: 0,
+                    id: Default::default(),
                     first: contact.first,
                     last: contact.last,
                     phone: contact.phone,
@@ -166,11 +166,6 @@ pub async fn post(
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct DeleteForm {
-    selected_contact_ids: Vec<i64>,
-}
-
 pub async fn delete(
     _: Path,
     flash: Flash,
@@ -180,7 +175,7 @@ pub async fn delete(
     for param in dbg!(form).split(|b| *b == b'&') {
         let mut things = param.splitn(2, |b| *b == b'=');
         let name = things.next().context("param had no name")?;
-        let value: i64 = things
+        let value = things
             .next()
             .context("param had no value")
             .and_then(|bytes| std::str::from_utf8(bytes).context("value was not utf-8"))

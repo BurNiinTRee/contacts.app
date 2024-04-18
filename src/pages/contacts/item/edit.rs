@@ -1,5 +1,5 @@
 use crate::{
-    model,
+    model::{self, ContactId},
     pages::contacts::shared::{Contact, Layout},
     Result,
 };
@@ -16,11 +16,11 @@ use serde::Deserialize;
 #[derive(Deserialize, TypedPath)]
 #[typed_path("/contacts/:id/edit")]
 pub struct Path {
-    pub id: i64,
+    pub id: ContactId,
 }
 
 impl Path {
-    pub fn new(id: &i64) -> Self {
+    pub fn new(id: &ContactId) -> Self {
         Self { id: *id }
     }
 }

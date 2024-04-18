@@ -4,9 +4,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use axum_extra::routing::RouterExt;
-use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
+use sqlx::{postgres::PgConnectOptions, PgPool};
 use tracing::info;
-use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
 
 mod assets;
 mod model;
@@ -14,7 +13,7 @@ mod pages;
 
 #[derive(Clone, FromRef)]
 struct AppState {
-    db: SqlitePool,
+    db: PgPool,
     contacts: model::Contacts,
     archiver: model::Archiver,
     flash_config: axum_flash::Config,
@@ -26,10 +25,9 @@ async fn main() -> anyhow::Result<()> {
     let db_options = std::env::var("DATABASE_URL")
         .as_deref()
         .unwrap_or("sqlite:data.db?mode=rwc")
-        .parse::<SqliteConnectOptions>()?
-        .extension_with_entrypoint(std::env::var("SQLITE_ICU_EXTENSION")?, "sqlite3_icu_init");
+        .parse::<PgConnectOptions>()?;
 
-    let db = sqlx::SqlitePool::connect_with(db_options).await?;
+    let db = sqlx::PgPool::connect_with(db_options).await?;
     sqlx::migrate!().run(&db).await?;
 
     let contacts = model::Contacts::new(db.clone());

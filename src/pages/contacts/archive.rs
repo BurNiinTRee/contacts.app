@@ -1,5 +1,5 @@
 use crate::{model, Result};
-use tracing::{event, instrument, Level};
+use tracing::instrument;
 
 use axum::{
     extract::State,

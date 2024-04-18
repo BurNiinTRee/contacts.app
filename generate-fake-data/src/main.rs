@@ -35,12 +35,19 @@ fn main() -> Result<()> {
 
         writeln!(
             out,
-            r#"("{}", "{}", "{}", "{}"),"#,
-            first, last, phone, email
+            r#"('{}', '{}', '{}', '{}'),"#,
+            postgres_escape(first),
+            postgres_escape(last),
+            postgres_escape(&phone),
+            postgres_escape(&email)
         )?;
         used_emails.insert(email);
     }
 
     write!(out, ";")?;
     Ok(())
+}
+
+fn postgres_escape(input: &str) -> String {
+    input.replace('\'', "\'\'")
 }
