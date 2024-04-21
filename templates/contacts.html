@@ -13,8 +13,10 @@
   </label>
 </form>
 <p>
-  <a href="{{ new::Path }}">Add Contact</a> <span hx-get="{{ count::Path }}" hx-trigger="load"><img
-      class="htmx-indicator" src="/assets/img/spinner.svg"></span>
+  <a href="{{ new::Path }}">Add Contact</a>
+  <span hx-get="{{ count::Path }}" hx-trigger="load">
+    <img class="htmx-indicator" src="/assets/img/spinner.svg">
+  </span>
 </p>
 <div id="archive-ui" hx-target="this">
   {% block archive %}

@@ -28,9 +28,9 @@ impl Contacts {
     }
 
     pub async fn count(&self) -> Result<u64> {
-        // let (result, _) = tokio::join!(
-        //     sqlx::query!("SELECT COUNT(*) as count FROM Contacts").fetch_one(&self.db),
-        //     tokio::time::sleep(Duration::from_secs(2))
+        // let (count, _) = tokio::join!(
+        //     sqlx::query_scalar!(r#"SELECT COUNT(*) as "count!" FROM Contacts"#).fetch_one(&self.db),
+        //     tokio::time::sleep(std::time::Duration::from_secs(2))
         // );
         let count = sqlx::query_scalar!(r#"SELECT COUNT(*) as "count!" FROM Contacts"#)
             .fetch_one(&self.db)
