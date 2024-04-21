@@ -24,7 +24,7 @@ async fn main() -> anyhow::Result<()> {
     console_subscriber::init();
     let db_options = std::env::var("DATABASE_URL")
         .as_deref()
-        .unwrap_or("sqlite:data.db?mode=rwc")
+        .unwrap_or("postgres:///contacts")
         .parse::<PgConnectOptions>()?;
 
     let db = sqlx::PgPool::connect_with(db_options).await?;
@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
-    info!("Listening on http://{}", listener.local_addr()?);
+    info!(address = %listener.local_addr()?, "Listening");
     axum::serve(
         listener,
         axum::Router::new()
