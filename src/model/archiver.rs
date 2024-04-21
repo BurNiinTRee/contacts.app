@@ -1,7 +1,12 @@
 use std::{ops::Deref, sync::Arc};
 
 use futures::stream::StreamExt;
-use tokio::{fs::File, io::AsyncWriteExt, sync::watch, task::AbortHandle};
+use tokio::{
+    fs::File,
+    io::{AsyncWriteExt, BufWriter},
+    sync::watch,
+    task::AbortHandle,
+};
 use tracing::{info, info_span, instrument, Instrument as _};
 
 use crate::model::{Contact, Result};
@@ -50,9 +55,10 @@ impl Archiver {
         }
     }
 
-    async fn work(state: watch::Sender<ArchiverState>, contacts: Contacts, mut out_file: File) {
+    async fn work(state: watch::Sender<ArchiverState>, contacts: Contacts, out_file: File) {
         info!("spawned worker");
         let state2 = state.clone();
+        let mut out_file = BufWriter::new(out_file);
         let res: Result<()> = async move {
             let count = contacts.count().await?;
             let mut contacts = contacts.get_all().enumerate();
