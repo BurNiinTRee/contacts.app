@@ -1,6 +1,10 @@
 use anyhow::Result;
 use fake::{locales::EN, Fake};
-use std::{collections::HashSet, io::Write};
+use std::{
+    collections::HashSet,
+    fs::File,
+    io::{BufWriter, Write},
+};
 
 fn main() -> Result<()> {
     let num: i64 = std::env::args()
@@ -8,7 +12,21 @@ fn main() -> Result<()> {
         .and_then(|a| a.parse().ok())
         .unwrap_or(9_000);
 
-    let mut out = std::io::stdout().lock();
+    match std::env::args().nth(2) {
+        Some(path) => {
+            let file = File::create(path)?;
+            let out = BufWriter::new(file);
+            write(out, num)?;
+        }
+        None => {
+            let out = std::io::stdout().lock();
+            write(out, num)?;
+        }
+    }
+    Ok(())
+}
+
+fn write<B: Write>(mut out: B, num: i64) -> Result<()> {
     write!(
         out,
         "INSERT INTO Contacts (first, last, phone, email) VALUES "
@@ -16,7 +34,7 @@ fn main() -> Result<()> {
 
     let mut used_emails = HashSet::new();
 
-    for n in 0..num {
+    'outer: for n in 0..num {
         eprintln!("generating {n}th entry");
         let mut first: &'static str = fake::faker::name::raw::FirstName(EN).fake();
         let mut last: &'static str = fake::faker::name::raw::LastName(EN).fake();
@@ -30,6 +48,9 @@ fn main() -> Result<()> {
             tries += 1;
             if tries % 1000 == 0 {
                 eprintln!("tried {tries} times");
+            }
+            if tries == 10_000_000 {
+                break 'outer;
             }
         }
 
