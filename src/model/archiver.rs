@@ -7,7 +7,7 @@ use tokio::{
     sync::watch,
     task::AbortHandle,
 };
-use tracing::{info, info_span, instrument, Instrument as _};
+use tracing::{info, info_span, instrument, trace, Instrument as _};
 
 use crate::model::{Contact, Result};
 
@@ -16,8 +16,8 @@ use super::{Contacts, Error};
 #[derive(Clone, Debug)]
 pub struct Archiver {
     contacts: Contacts,
-    _recv: watch::Receiver<ArchiverState>,
     state: watch::Sender<ArchiverState>,
+    _recv: watch::Receiver<ArchiverState>,
 }
 
 #[derive(Debug)]
@@ -88,7 +88,7 @@ impl Archiver {
                             *p = progress;
                         }
                     });
-                    info!(progress, "Updating progress");
+                    trace!(progress, "Updating progress");
                 }
             }
             Ok(out_file.shutdown().await?)
@@ -96,7 +96,9 @@ impl Archiver {
         .await;
         state
             .send(ArchiverState::Complete(res.map_err(Into::into)))
-            .unwrap()
+            .unwrap();
+
+        info!("Finished work");
     }
 
     #[instrument(skip(self))]
@@ -113,6 +115,7 @@ impl Archiver {
             Self::work(self.state.clone(), self.contacts.clone(), out_file)
                 .instrument(info_span!("worker thread")),
         );
+        info!("spawned worker thread");
 
         self.state
             .send(ArchiverState::Running {
