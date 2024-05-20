@@ -72,7 +72,7 @@
               }
             ];
           };
-          process.implementation = "overmind";
+          process-managers.process-compose.settings.theme = "Light Modern";
           processes.cargo-watch.exec = "cargo watch --clear -x 'sqlx database setup' -x 'run'";
         };
       };
