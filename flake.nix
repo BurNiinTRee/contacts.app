@@ -32,6 +32,24 @@
           containers = lib.mkForce {};
           languages.rust = {
             enable = true;
+            channel = "nightly";
+            rustflags = builtins.toString [
+              # "-Clink-arg=-fuse-ld=mold"
+              # "-Clinker=clang"
+              "--cfg"
+              "tokio_unstable"
+            ];
+            mold.enable = true;
+            components = [
+              "rustc"
+              "cargo"
+              "clippy"
+              "rustfmt"
+              "rust-analyzer"
+              "miri"
+              "rust-src"
+              "rust-std"
+            ];
           };
           packages = [
             pkgs.cargo-expand
@@ -44,12 +62,6 @@
           ];
           env = {
             DATABASE_URL = "postgresql:///contacts";
-            CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS = builtins.toString [
-              "-Clink-arg=-fuse-ld=mold"
-              "-Clinker=clang"
-              "--cfg"
-              "tokio_unstable"
-            ];
             RUST_LOG = "info";
           };
           services.postgres = {

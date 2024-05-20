@@ -118,7 +118,7 @@ pub async fn get(
                 layout: shared::Layout {
                     flashes: Some(flashes),
                 },
-                archiver_status: archiver.status().await,
+                archiver_status: archiver.status().await?,
                 contacts,
                 page,
                 search_term: query.q,

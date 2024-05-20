@@ -1,33 +1,18 @@
-use std::{ops::Deref, sync::Arc};
+use std::{io::Write as _, sync::Arc};
 
-use futures::stream::StreamExt;
+use futures::stream::{BoxStream, StreamExt};
 use tokio::{
     fs::File,
     io::{AsyncWriteExt, BufWriter},
-    sync::watch,
-    task::AbortHandle,
+    sync::{mpsc, oneshot},
 };
-use tracing::{info, info_span, instrument, trace, Instrument as _};
+use tracing::{info, instrument, trace};
 
-use crate::model::{Contact, Result};
-
-use super::{Contacts, Error};
+use crate::model::{Contact, Contacts, Error, Result};
 
 #[derive(Clone, Debug)]
 pub struct Archiver {
-    contacts: Contacts,
-    state: watch::Sender<ArchiverState>,
-    _recv: watch::Receiver<ArchiverState>,
-}
-
-#[derive(Debug)]
-enum ArchiverState {
-    Waiting,
-    Running {
-        progress: f32,
-        abort_handle: AbortHandle,
-    },
-    Complete(Result<(), Arc<Error>>),
+    commands: mpsc::Sender<Command>,
 }
 
 #[derive(Clone)]
@@ -37,100 +22,113 @@ pub enum ArchiverStatus {
     Complete(Result<(), Arc<Error>>),
 }
 
+enum Command {
+    Start,
+    Reset,
+    GetStatus(oneshot::Sender<ArchiverStatus>),
+}
+
 impl Archiver {
     pub fn new(contacts: Contacts) -> Self {
-        let (state, _recv) = watch::channel(ArchiverState::Waiting);
-        Self {
-            contacts,
-            state,
-            _recv,
-        }
+        let (commands, recv) = mpsc::channel(1);
+        tokio::spawn(Self::work(recv, contacts));
+        Self { commands }
     }
 
-    pub async fn status(&self) -> ArchiverStatus {
-        match self.state.borrow().deref() {
-            ArchiverState::Waiting => ArchiverStatus::Waiting,
-            ArchiverState::Running { progress, .. } => ArchiverStatus::Running(*progress),
-            ArchiverState::Complete(result) => ArchiverStatus::Complete(result.clone()),
-        }
+    pub async fn status(&self) -> Result<ArchiverStatus> {
+        let (tx, rx) = oneshot::channel();
+        self.commands.send(Command::GetStatus(tx)).await?;
+        rx.await.map_err(Into::into)
     }
 
-    async fn work(state: watch::Sender<ArchiverState>, contacts: Contacts, out_file: File) {
+    async fn work(mut commands: mpsc::Receiver<Command>, contacts: Contacts) -> ! {
         info!("spawned worker");
-        let state2 = state.clone();
-        let mut out_file = BufWriter::new(out_file);
-        let res: Result<()> = async move {
-            let count = contacts.count().await?;
-            let mut contacts = contacts.get_all().enumerate();
-            while let Some((
-                written,
-                Ok(Contact {
-                    id,
-                    first,
-                    last,
-                    phone,
-                    email,
-                }),
-            )) = contacts.next().await
-            {
-                // tokio::time::sleep(Duration::from_millis(1)).await;
-                out_file
-                    .write_all(format!("{id},{first},{last},{phone},{email}\n").as_bytes())
-                    .await?;
-                if written & 0x3FFF == 0 {
-                    let progress = written as f32 / count as f32;
-                    state2.send_modify(|s| {
-                        if let ArchiverState::Running {
-                            progress: ref mut p,
-                            ..
-                        } = s
-                        {
-                            *p = progress;
+        let mut rows: BoxStream<Result<Contact>> = Box::pin(futures::stream::pending());
+        let mut running = false;
+        let mut count = 0;
+        let mut total = 0;
+        let mut result: Option<Result<_, Arc<Error>>> = None;
+        let mut file = None;
+        let mut line = Vec::new();
+        loop {
+            tokio::select! {
+                command = commands.recv() => {
+                    match command {
+                        Some(Command::Start)=> {
+                            result = None;
+                            running = true;
+                            total = match contacts.count().await {
+                                Ok(c) => c,
+                                Err(err) => {
+                                    result = Some(Err(err.into()));
+                                    continue;
+                                },
+                            };
+                            count = 0;
+                            file = Some(match File::create("run/export.csv").await {
+                                Ok(f) => BufWriter::new(f),
+                                Err(err) => {
+                                    result = Some(Err(Arc::new(Error::from(err))));
+                                    continue;
+                                },
+                            });
+                            let new_rows: BoxStream<Result<Contact>> = Box::pin(contacts.get_all());
+                            rows = new_rows;
+                            info!("Archiving started");
+                        },
+                        Some(Command::GetStatus(ret)) => {
+                            let _ = match (&mut result, running) {
+                                (Some(res), _) => ret.send(ArchiverStatus::Complete(res.clone().map_err(Into::into))),
+                                (_, false) => ret.send(ArchiverStatus::Waiting),
+                                _ => ret.send(ArchiverStatus::Running(count as f32 / total as f32))
+                            };
+                            trace!("Archiver returned status");
                         }
-                    });
-                    trace!(progress, "Updating progress");
+                        Some(Command::Reset) => {
+                            result = None;
+                            running = false;
+                            info!("Archiver got reset");
+                        }
+                        None => {},
+                    }
+                }
+
+                row = rows.next(), if running => {
+                    match row {
+                        Some(res) => match res {
+                            Ok(Contact { id, first, last, phone, email }) => {
+                                line.clear();
+                                writeln!(&mut line, "{id},{first},{last},{phone},{email}").unwrap();
+
+                                if let Err(err) = file.as_mut().expect("File not opened")
+                                    .write_all(&line)
+                                    .await {
+                                    result = Some(Err(Arc::new(err.into())));
+                                    continue;
+                                }
+                                count += 1;
+                            },
+                            Err(err) => {
+                                result = Some(Err(err.into()));
+                                continue;
+                            },
+                        },
+                        None => {
+                            if let Some(mut f) = file.take() { f.flush().await.unwrap() };
+                            result = Some(Ok(()));
+                        }
+                    }
                 }
             }
-            Ok(out_file.shutdown().await?)
         }
-        .await;
-        state
-            .send(ArchiverState::Complete(res.map_err(Into::into)))
-            .unwrap();
-
-        info!("Finished work");
     }
 
     #[instrument(skip(self))]
     pub async fn run(&self) -> Result<()> {
-        if let ArchiverState::Running { .. } = self.state.borrow().deref() {
-            return Err(Error::ArchiverRunning);
-        }
-        let mut out_file = File::create("run/export.csv").await?;
-        out_file
-            .write_all(b"id,firstname,lastname,phone,email\n")
-            .await?;
-
-        let handle = tokio::spawn(
-            Self::work(self.state.clone(), self.contacts.clone(), out_file)
-                .instrument(info_span!("worker thread")),
-        );
-        info!("spawned worker thread");
-
-        self.state
-            .send(ArchiverState::Running {
-                progress: 0.0,
-                abort_handle: handle.abort_handle(),
-            })
-            .unwrap();
-
-        Ok(())
+        Ok(self.commands.send(Command::Start).await?)
     }
 
-    pub async fn reset(&self) {
-        if let ArchiverState::Running { abort_handle, .. } = self.state.borrow().deref() {
-            abort_handle.abort();
-        };
-        self.state.send(ArchiverState::Waiting).unwrap();
+    pub async fn reset(&self) -> Result<()> {
+        Ok(self.commands.send(Command::Reset).await?)
     }
 }
