@@ -1,11 +1,12 @@
-use std::{io::Write as _, sync::Arc};
+use std::{
+    fs::File,
+    io::{BufWriter, Write as _},
+    sync::Arc,
+    task::Poll,
+};
 
 use futures::stream::{BoxStream, StreamExt};
-use tokio::{
-    fs::File,
-    io::{AsyncWriteExt, BufWriter},
-    sync::{mpsc, oneshot},
-};
+use tokio::sync::{mpsc, oneshot};
 use tracing::{info, instrument, trace};
 
 use crate::model::{Contact, Contacts, Error, Result};
@@ -52,6 +53,7 @@ impl Archiver {
         let mut line = Vec::new();
         loop {
             tokio::select! {
+                biased;
                 command = commands.recv() => {
                     match command {
                         Some(Command::Start)=> {
@@ -65,7 +67,7 @@ impl Archiver {
                                 },
                             };
                             count = 0;
-                            file = Some(match File::create("run/export.csv").await {
+                            file = Some(match File::create("run/export.csv") {
                                 Ok(f) => BufWriter::new(f),
                                 Err(err) => {
                                     result = Some(Err(Arc::new(Error::from(err))));
@@ -101,12 +103,12 @@ impl Archiver {
                                 writeln!(&mut line, "{id},{first},{last},{phone},{email}").unwrap();
 
                                 if let Err(err) = file.as_mut().expect("File not opened")
-                                    .write_all(&line)
-                                    .await {
+                                    .write_all(&line) {
                                     result = Some(Err(Arc::new(err.into())));
                                     continue;
                                 }
                                 count += 1;
+                                yield_once().await;
                             },
                             Err(err) => {
                                 result = Some(Err(err.into()));
@@ -114,7 +116,9 @@ impl Archiver {
                             },
                         },
                         None => {
-                            if let Some(mut f) = file.take() { f.flush().await.unwrap() };
+                            if let Some(mut f) = file.take() { f.flush().unwrap() };
+                            // yield_once().await;
+                            rows = Box::pin(futures::stream::pending());
                             result = Some(Ok(()));
                         }
                     }
@@ -131,4 +135,18 @@ impl Archiver {
     pub async fn reset(&self) -> Result<()> {
         Ok(self.commands.send(Command::Reset).await?)
     }
+}
+
+async fn yield_once() {
+    let mut run = false;
+    std::future::poll_fn(move |ctx| {
+        if run {
+            Poll::Ready(())
+        } else {
+            run = true;
+            ctx.waker().wake_by_ref();
+            Poll::Pending
+        }
+    })
+    .await;
 }
