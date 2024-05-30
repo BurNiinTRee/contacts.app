@@ -10,8 +10,8 @@ default-run = "contacts"
 
 [dependencies]
 anyhow = "1.0.79"
-askama = { git = "https://github.com/BurNiinTRee/askama", branch = "extract-blocks", features = ["with-axum"] }
-askama_axum = { git = "https://github.com/BurNiinTRee/askama", branch = "extract-blocks"}
+askama = { git = "https://github.com/BurNiinTRee/askama", branch = "upstream-blocks", features = ["with-axum"] }
+askama_axum = { git = "https://github.com/BurNiinTRee/askama", branch = "upstream-blocks"}
 axum = { version = "0.7.4", features = ["macros"] }
 axum-extra = { version = "0.9.2", features = ["typed-routing"] }
 axum-flash = "0.8"

@@ -60,7 +60,7 @@ checksum = "f538837af36e6f6a9be0faa67f9a314f8119e4e4b5867c6ab40ed60360142519"
 [[package]]
 name = "askama"
 version = "0.13.0"
-source = "git+https://github.com/BurNiinTRee/askama?branch=extract-blocks#96599c20a8cecc5f53bad767c78930cfc492d895"
+source = "git+https://github.com/BurNiinTRee/askama?branch=upstream-blocks#335d6ee8a2e89495d65563a12dbc8d077dba5a76"
 dependencies = [
  "askama_derive",
  "askama_escape",
@@ -72,7 +72,7 @@ dependencies = [
 [[package]]
 name = "askama_axum"
 version = "0.5.0"
-source = "git+https://github.com/BurNiinTRee/askama?branch=extract-blocks#96599c20a8cecc5f53bad767c78930cfc492d895"
+source = "git+https://github.com/BurNiinTRee/askama?branch=upstream-blocks#335d6ee8a2e89495d65563a12dbc8d077dba5a76"
 dependencies = [
  "askama",
  "axum-core 0.4.3",
@@ -82,7 +82,7 @@ dependencies = [
 [[package]]
 name = "askama_derive"
 version = "0.13.0"
-source = "git+https://github.com/BurNiinTRee/askama?branch=extract-blocks#96599c20a8cecc5f53bad767c78930cfc492d895"
+source = "git+https://github.com/BurNiinTRee/askama?branch=upstream-blocks#335d6ee8a2e89495d65563a12dbc8d077dba5a76"
 dependencies = [
  "askama_parser",
  "basic-toml",
@@ -96,13 +96,13 @@ dependencies = [
 
 [[package]]
 name = "askama_escape"
-version = "0.10.3"
-source = "git+https://github.com/BurNiinTRee/askama?branch=extract-blocks#96599c20a8cecc5f53bad767c78930cfc492d895"
+version = "0.11.0"
+source = "git+https://github.com/BurNiinTRee/askama?branch=upstream-blocks#335d6ee8a2e89495d65563a12dbc8d077dba5a76"
 
 [[package]]
 name = "askama_parser"
 version = "0.2.1"
-source = "git+https://github.com/BurNiinTRee/askama?branch=extract-blocks#96599c20a8cecc5f53bad767c78930cfc492d895"
+source = "git+https://github.com/BurNiinTRee/askama?branch=upstream-blocks#335d6ee8a2e89495d65563a12dbc8d077dba5a76"
 dependencies = [
  "nom",
 ]
