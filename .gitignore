@@ -2,3 +2,4 @@
 /target
 data.db*
 .devenv
+/migrations/20240330122859_insert-fake-data.up.sql

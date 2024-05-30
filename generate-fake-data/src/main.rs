@@ -15,14 +15,19 @@ fn main() -> Result<()> {
 
     let rng = rand::rngs::SmallRng::from_seed(*b"A cool seed that's 32 bytes long");
 
-    match std::env::args().nth(2) {
+    match std::env::args().nth(2).as_deref() {
+        Some("-") => {
+            let out = std::io::stdout().lock();
+            write(out, num, rng)?;
+        }
         Some(path) => {
             let file = File::create(path)?;
             let out = BufWriter::new(file);
             write(out, num, rng)?;
         }
         None => {
-            let out = std::io::stdout().lock();
+            let file = File::create("migrations/20240330122859_insert-fake-data.up.sql")?;
+            let out = BufWriter::new(file);
             write(out, num, rng)?;
         }
     }
@@ -32,7 +37,7 @@ fn main() -> Result<()> {
 fn write<B: Write, R: Rng>(mut out: B, num: i64, mut rng: R) -> Result<()> {
     write!(
         out,
-        "INSERT INTO Contacts (first, last, phone, email) VALUES "
+        "INSERT INTO Contacts (first, last, phone, email) VALUES\n('Lars', 'Mühmel', '0123456789', 'lars@muehml.eu')"
     )?;
 
     let mut used_emails = HashSet::new();
@@ -57,9 +62,9 @@ fn write<B: Write, R: Rng>(mut out: B, num: i64, mut rng: R) -> Result<()> {
             }
         }
 
-        writeln!(
+        write!(
             out,
-            r#"('{}', '{}', '{}', '{}'),"#,
+            ",\n('{}', '{}', '{}', '{}')",
             postgres_escape(first),
             postgres_escape(last),
             postgres_escape(&phone),
