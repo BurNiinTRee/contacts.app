@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.81"
 fake = "2.9.2"
+rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
