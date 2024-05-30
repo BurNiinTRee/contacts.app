@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
     sqlx::migrate!().run(&db).await?;
 
     let contacts = model::Contacts::new(db.clone());
-    let archiver = model::Archiver::new(contacts.clone());
+    let archiver = model::Archiver::new(contacts.clone()).await?;
 
     let flash_config = axum_flash::Config::new(axum_flash::Key::generate());
 
