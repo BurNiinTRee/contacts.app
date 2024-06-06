@@ -1,4 +1,4 @@
-use futures::{stream::StreamExt, Stream};
+use futures::stream::{Stream, StreamExt};
 use serde::Deserialize;
 use sqlx::PgPool;
 
