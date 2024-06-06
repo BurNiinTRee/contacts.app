@@ -32,32 +32,29 @@
           containers = lib.mkForce {};
           languages.rust = {
             enable = true;
-            channel = "nightly";
-            rustflags = builtins.toString [
-              # "-Clink-arg=-fuse-ld=mold"
-              # "-Clinker=clang"
-              "--cfg"
-              "tokio_unstable"
-            ];
             mold.enable = true;
-            components = [
-              "rustc"
-              "cargo"
-              "clippy"
-              "rustfmt"
-              "rust-analyzer"
-              "miri"
-              "rust-src"
-              "rust-std"
-            ];
+            # channel = "nightly";
+            # rustflags = builtins.toString [
+            #   "--cfg"
+            #   "tokio_unstable"
+            # ];
+            # targets = ["x86_64-unknown-linux-gnu"];
+            # components = [
+            #   "rustc"
+            #   "cargo"
+            #   "clippy"
+            #   "rustfmt"
+            #   "rust-analyzer"
+            #   "miri"
+            #   "rust-src"
+            #   "rust-std"
+            # ];
           };
           packages = [
-            pkgs.cargo-expand
             pkgs.cargo-watch
             pkgs.dart-sass
-            pkgs.mold
             pkgs.sqlx-cli
-            pkgs.tokio-console
+            # pkgs.tokio-console
             pkgs.vscode-langservers-extracted
           ];
           env = {
