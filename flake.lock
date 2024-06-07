@@ -1,22 +1,5 @@
 {
   "nodes": {
-    "bntr": {
-      "locked": {
-        "dir": "modules",
-        "lastModified": 1717669381,
-        "narHash": "sha256-ZllVfThrEWP7iw1wQshplrDSYjjMQ9tBkMcBMWcYvO8=",
-        "owner": "BurNiinTRee",
-        "repo": "nix-sources",
-        "rev": "af7e5d5db9de53ea5db409d18b4087015bb41669",
-        "type": "github"
-      },
-      "original": {
-        "dir": "modules",
-        "owner": "BurNiinTRee",
-        "repo": "nix-sources",
-        "type": "github"
-      }
-    },
     "cachix": {
       "inputs": {
         "devenv": "devenv_2",
@@ -56,11 +39,11 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1717684889,
-        "narHash": "sha256-kDZzE2Yj562Mgh2/zcMCL31mCtDA/X2C+91UrzTnht8=",
+        "lastModified": 1717698746,
+        "narHash": "sha256-Bt/q+zyBpI3Uwd6HGTvZSPvRR2DoaHXtvfFULeXP/aI=",
         "owner": "cachix",
         "repo": "devenv",
-        "rev": "491b08cc46b534b1e7cf200242ab24c8a0e50d12",
+        "rev": "866ecadab5d92cdbb296723f67fa464d01401d9a",
         "type": "github"
       },
       "original": {
@@ -118,11 +101,11 @@
         "rust-analyzer-src": "rust-analyzer-src"
       },
       "locked": {
-        "lastModified": 1717655240,
-        "narHash": "sha256-n43uyWCS7R7ScJ85ZcJt4lVUPmlZz4/1/TdGgB2k5tA=",
+        "lastModified": 1717741716,
+        "narHash": "sha256-v71DDu2gb02iBIAhUwu5mQZNtYD45QcbEqahqsOCCyU=",
         "owner": "nix-community",
         "repo": "fenix",
-        "rev": "143c8105ce72bb5740d0009546ee723c14842b50",
+        "rev": "05f2a8ae62c45637b20d162fa2dd450b79e71c27",
         "type": "github"
       },
       "original": {
@@ -410,11 +393,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1717196966,
-        "narHash": "sha256-yZKhxVIKd2lsbOqYd5iDoUIwsRZFqE87smE2Vzf6Ck0=",
+        "lastModified": 1717602782,
+        "narHash": "sha256-pL9jeus5QpX5R+9rsp3hhZ+uplVHscNJh8n8VpqscM0=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "57610d2f8f0937f39dbd72251e9614b1561942d8",
+        "rev": "e8057b67ebf307f01bdcc8fba94d94f75039d1f6",
         "type": "github"
       },
       "original": {
@@ -495,7 +478,6 @@
     },
     "root": {
       "inputs": {
-        "bntr": "bntr",
         "devenv": "devenv",
         "devenv-root": "devenv-root",
         "fenix": "fenix",

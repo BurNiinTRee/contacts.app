@@ -1,20 +1,18 @@
 {
   inputs = {
-    bntr.url = "github:BurNiinTRee/nix-sources?dir=modules";
     devenv.url = "github:cachix/devenv";
     devenv-root = {
       url = "file+file:///dev/null";
       flake = false;
     };
-    # fenix.url = "github:nix-community/fenix";
+    fenix.url = "github:nix-community/fenix";
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
   outputs = inputs @ {
     flake-parts,
-    # fenix,
-    bntr,
+    fenix,
     devenv,
     devenv-root,
     nixpkgs,
@@ -23,10 +21,9 @@
     flake-parts.lib.mkFlake {inherit inputs;} ({...}: {
       systems = ["x86_64-linux"];
 
-      imports = [bntr.flakeModules.nixpkgs devenv.flakeModule];
+      imports = [devenv.flakeModule];
 
       perSystem = {
-        # nixpkgs.overlays = [fenix.overlays.default];
         devenv.shells.default = {
           lib,
           pkgs,
@@ -43,7 +40,7 @@
           languages.rust = {
             enable = true;
             mold.enable = true;
-            # channel = "nightly";
+            channel = "nightly";
             # rustflags = builtins.toString [
             #   "--cfg"
             #   "tokio_unstable"
